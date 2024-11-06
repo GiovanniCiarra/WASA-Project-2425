@@ -4,6 +4,102 @@ info:
   description: |
     WASAText is an application where users can exchanges messages themselves
   version: 1.0.0
+
+components:
+  parameters:
+    userID:
+      schema:
+        type: integer
+        example: 1
+        readOnly: true
+      name: userID
+      in: path
+      required: true
+      description: identifier of a specific user
+    
+    chatID:
+      schema:
+        type: integer
+        example: 1
+        readOnly: true
+      name: chatID
+      in: path
+      required: true
+      description: identifier of a specific chat
+    
+    messageID:
+      schema:
+        type: integer
+        example: 1
+        readOnly: true
+      name: messageID
+      in: path
+      required: true
+      description: identifier of a specific message
+      
+      
+  schemas:
+    user:
+      title: User
+      description: this object represent a single user
+      type: object
+      properties:
+        id: 
+          description: The identifier of the user
+          type: integer
+          example: 1
+          readOnly: true
+        username:
+          description: The username of the user
+          type: string
+          example: "Giovanni"
+          minLength: 3
+          maxLength: 16
+        photo:
+          description: The photo of the user
+          type: string  #?
+          example: ...
+    
+    chat:
+      title: Chat
+      description: this object represent a single chat
+      type: object
+      properties:
+        id: 
+          description: The identifier of the chat
+          type: integer
+          example: 1
+          readOnly: true
+        messages:
+          description: messages of the chat
+          type: array
+          items:
+            $ref: "#/components/schemas/message"
+      
+    message:
+      title: Message
+      description: this object represent a single message
+      type: object
+      properties:
+        id: 
+          description: the identifier of the message
+          type: integer
+          example: 1
+          readOnly: true
+        body:
+          description: the body of the message
+          type: string
+          example: "Hi, how are you?"
+        sender: 
+          $ref: "#/components/schemas/user"
+        comment:
+          description: a comment of the message
+          type: string
+          example: "good"
+        timestamp:
+          type: string
+          format: date-time
+          description: the time when the message was sent
   
 paths:
   /session:
@@ -43,4 +139,158 @@ paths:
                     type: string
                     example: "abcdef012345"
     
-    /users/me/username
+    
+  /users/{userID}:
+    parameters:
+      - $ref: "#/components/parameters/userID"
+    patch:
+      operationId: updateUser #(setMyUserName and setMyPhoto)
+      summary: update username of an existing user
+      description: |
+        Replace the property 'username' and/or 'photo'
+        with the ones in the requestBody
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema: 
+              type: object
+              properties:
+                username: 
+                  type: string
+                photo:
+                  type: string
+      responses:
+        "200":
+          description: User is updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/user"
+        "404":
+          description: user not found
+      
+
+  /users/{userID}/chats:
+    parameters:
+      - $ref: "#/components/parameters/userID"
+    get:
+      operationId: getMyConversations
+      summary: get the conversations of the user
+      description: |
+        Return all the non-empty chats of the user
+      responses:
+        "200":
+          description: list of chats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/chat"
+                  
+          
+  /users/{userID}/chats/{chatID}:
+    parameters:
+      - $ref: "#/components/parameters/userID"
+      - $ref: "#/components/parameters/chatID"
+    get:
+      operationId: getConversation
+      summary: get a specific chat
+      description: |
+        Return a specific chat of the user
+      responses:
+        "200":
+          description: return a specific chat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/chat"
+    post:
+      operationId: sendMessage
+      summary: create and send a message
+      description: |
+        a new message is created and added in the 
+        array of the messages of a specific chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                body:
+                  description: the body of the message
+                  type: string
+                  example: "Hi, how are you?"  
+      responses:
+        "201":
+          description: The message is created and is sent succesfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/message"
+        "404":
+          description: user or chat not found
+          
+          
+  #/users/{userID}/chats/{chatID}/messages
+  
+  
+  /users/{userID}/chats/{chatID}/messages/{messageID}:
+    parameters:
+      - $ref: "#/components/parameters/userID"
+      - $ref: "#/components/parameters/chatID"
+      - $ref: "#/components/parameters/messageID"
+    patch:
+      operationId: commentMessage
+      summary: add a comment 
+      description: |
+        a comment is added to a specific message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  description: the comment of the message
+                  type: string
+                  example: "good"
+      responses:
+        "201":
+          description: | 
+            A comment is created and added to a specific message
+            content
+        "404":
+          description: message not found
+          
+    
+  /users/{userID}/chats/{chatID}/messages/{messageID}/comment:
+    parameters:
+      - $ref: "#/components/parameters/userID"
+      - $ref: "#/components/parameters/chatID"
+      - $ref: "#/components/parameters/messageID"  
+    delete:
+      operationId: deleteComment
+      summary: uncomment a message
+      description: |
+        the comment, if present, is deleted from 
+        the message otherwise nothing happens
+
+      responses:
+        "200":
+          description: The comment is deleted from the message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/message"
+        "404":
+          description: message not found
+                  
+  #/users/{userID}/groups
+  #/users/{userID}/groups/{groupID}
+
+  
+  
