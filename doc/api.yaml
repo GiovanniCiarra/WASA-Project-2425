@@ -36,6 +36,16 @@ components:
       in: path
       required: true
       description: identifier of a specific message
+    
+    groupID:
+      schema:
+        type: integer
+        example: 1
+        readOnly: true
+      name: groupID
+      in: path
+      required: true
+      description: identifier of a specific group
       
       
   schemas:
@@ -57,8 +67,9 @@ components:
           maxLength: 16
         photo:
           description: The photo of the user
-          type: string  #?
-          example: ...
+          type: string
+          format: url
+          example: "https://example.com/images/photo.jpg"
     
     chat:
       title: Chat
@@ -75,6 +86,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/message"
+          minItems: 1
       
     message:
       title: Message
@@ -100,6 +112,32 @@ components:
           type: string
           format: date-time
           description: the time when the message was sent
+          
+    group:
+      title: Group
+      description: this object represent a single group
+      type: object
+      properties:
+        id: 
+          description: the identifier of the group
+          type: integer
+          example: 1
+          readOnly: true
+        photo:
+          description: the photo of the group
+          type: string
+          format: url
+          example: "https://example.com/images/photo.jpg"
+        users:
+          description: the list of the users in the group
+          type: array
+          items:
+            $ref: "#/components/schemas/user"
+        messages:
+          description: the list of the group's messages
+          type: array
+          items: 
+            $ref: "#/components/schemas/message"
   
 paths:
   /session:
@@ -138,17 +176,37 @@ paths:
                     # or any other type of identifier
                     type: string
                     example: "abcdef012345"
+  
+  /users/:
+    get:
+      operationId: getUsers
+      tags: ["users"]
+      summary: "get all users"
+      description: |
+        Returns all the users registered
+      responses:
+        "200":
+          description: "list of users"
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  $ref: "#/components/schemas/user"
+                minItems: 0
+                maxItems: 99999
     
     
-  /users/{userID}:
+  /users/{userID}/username:
     parameters:
       - $ref: "#/components/parameters/userID"
-    patch:
-      operationId: updateUser #(setMyUserName and setMyPhoto)
-      summary: update username of an existing user
+    put:
+      operationId: setMyUsername
+      tags: ["users"]
+      summary: "update username of an existing user"
       description: |
-        Replace the property 'username' and/or 'photo'
-        with the ones in the requestBody
+        Replace the property 'username' of a specific user
+        with the one in the requestBody
       requestBody:
         required: true
         content: 
@@ -158,24 +216,54 @@ paths:
               properties:
                 username: 
                   type: string
-                photo:
-                  type: string
+                  pattern: "^[a-zA-Z0-9]+$"
+                  minLength: 3
+                  maxLength: 16
+              required:
+                - username
       responses:
         "200":
-          description: User is updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/user"
+          description: "User's username is updated successfully"
+        "400":
+          description: "invalid input"
         "404":
-          description: user not found
-      
-
-  /users/{userID}/chats:
+          description: "user not found"
+          
+          
+  /users/{userID}/photo:
     parameters:
       - $ref: "#/components/parameters/userID"
+    put:
+      operationId: setMyPhoto
+      tags: ["users"]
+      summary: "update photo of an existing user"
+      description: |
+        Replace the property 'photo' of a specific user
+        with the one in the requestBody
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema: 
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: url
+                  example: "https://example.com/images/photo.jpg"
+      responses:
+        "200":
+          description: "User's photo is updated successfully"
+        "400":
+          description: "invalid input"
+        "404":
+          description: "user not found"
+    
+    
+  /chats/:
     get:
       operationId: getMyConversations
+      tags: ["chats"]
       summary: get the conversations of the user
       description: |
         Return all the non-empty chats of the user
@@ -188,14 +276,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/chat"
+                minItems: 0
+                maxItems: 99999
                   
           
-  /users/{userID}/chats/{chatID}:
+  /chats/{chatID}:
     parameters:
-      - $ref: "#/components/parameters/userID"
       - $ref: "#/components/parameters/chatID"
     get:
       operationId: getConversation
+      tags: ["chats"]
       summary: get a specific chat
       description: |
         Return a specific chat of the user
@@ -206,12 +296,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/chat"
+                
+                
+  /chats/{chatID}/messages:
+    parameters:
+      - $ref: "#/components/parameters/chatID"
     post:
       operationId: sendMessage
+      tags: ["chats"]
       summary: create and send a message
       description: |
         a new message is created and added in the 
-        array of the messages of a specific chat
+        message's array of a specific chat
       requestBody:
         required: true
         content:
@@ -223,6 +319,8 @@ paths:
                   description: the body of the message
                   type: string
                   example: "Hi, how are you?"  
+              required:
+                - body
       responses:
         "201":
           description: The message is created and is sent succesfully
@@ -231,20 +329,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/message"
         "404":
-          description: user or chat not found
-          
-          
-  #/users/{userID}/chats/{chatID}/messages
-  
-  
-  /users/{userID}/chats/{chatID}/messages/{messageID}:
+          description: "user or chat not found"
+
+
+  /chats/{chatID}/messages/{messageID}/comment:
     parameters:
-      - $ref: "#/components/parameters/userID"
       - $ref: "#/components/parameters/chatID"
       - $ref: "#/components/parameters/messageID"
-    patch:
+    put:
       operationId: commentMessage
-      summary: add a comment 
+      tags: ["chats"]
+      summary: "add a comment"
       description: |
         a comment is added to a specific message
       requestBody:
@@ -255,42 +350,141 @@ paths:
               type: object
               properties:
                 comment:
-                  description: the comment of the message
+                  description: "the comment of the message"
                   type: string
                   example: "good"
+              required:
+                - comment
       responses:
         "201":
           description: | 
             A comment is created and added to a specific message
             content
+        "400":
+          description: invalid input
         "404":
           description: message not found
           
-    
-  /users/{userID}/chats/{chatID}/messages/{messageID}/comment:
-    parameters:
-      - $ref: "#/components/parameters/userID"
-      - $ref: "#/components/parameters/chatID"
-      - $ref: "#/components/parameters/messageID"  
     delete:
       operationId: deleteComment
+      tags: ["chats"]
       summary: uncomment a message
       description: |
         the comment, if present, is deleted from 
         the message otherwise nothing happens
-
       responses:
         "200":
           description: The comment is deleted from the message
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/message"
         "404":
           description: message not found
+          
                   
-  #/users/{userID}/groups
-  #/users/{userID}/groups/{groupID}
+  /groups/{groupID}/users:
+    parameters:
+      - $ref: "#/components/parameters/groupID"
+    post:
+      operationId: addToGroup
+      tags: ["groups"]
+      summary: add to group
+      description: |
+        a new user is added to the specific group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/user"
+      responses:
+        "200":
+          description: "user added succesfully"
+        "404":
+          description: "group not found"
+          
+          
+  /groups/{groupID}/users/{userID}:
+    parameters:
+      - $ref: "#/components/parameters/groupID"
+      - $ref: "#/components/parameters/userID"
+    delete:
+      operationId: leaveGroup
+      tags: ["groups"]
+      summary: leave the group
+      description: |
+        the user is deleted from the group's users
+      responses:
+        "200":
+          description: "user deleted succesfully"
+        "404":
+          description: "group not found"
+          
+  
+  /groups/{groupID}/name:
+    parameters:
+      - $ref: "#/components/parameters/groupID"
+    put:
+      operationId: setGroupName
+      tags: ["groups"]
+      summary: set the name of the group
+      description: |
+        The name of the specific group is setted with the 
+        string passed in the requestBody
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  description: "new group's name"
+                  type: string
+                  example: "Wasa 24/25"
+                  minLength: 1
+                  maxLength: 16
+              required: 
+                - name
+      responses:
+        "200": 
+          description: "group's name updated"
+        "400":
+          description: "invalid input"
+        "404":
+          description: "group not found"
+    
+    
+  /groups/{groupID}/photo:
+    parameters:
+      - $ref: "#/components/parameters/groupID"
+    patch:
+      operationId: setGroupPhoto
+      tags: ["groups"]
+      summary: set/change the group's photo
+      description: |
+        The photo of the specific group is setted/changed with the one
+        passed in the requestBody
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                photo:
+                  description: new group's photo
+                  type: string
+                  format: url
+                  example: "https://example.com/images/photo.jpg"
+              required:   
+                - photo
+      responses:
+        "200":
+          description: group's photo updated
+        "404":
+          description: group not found
+                  
+                  
+
+  
 
   
   
