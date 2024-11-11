@@ -104,9 +104,9 @@ components:
           example: "Hi, how are you?"
         sender: 
           $ref: "#/components/schemas/user"
-        comment:
+        comments:
           description: a comment of the message
-          type: string
+          type: object
           example: "good"
         timestamp:
           type: string
@@ -378,6 +378,26 @@ paths:
         "404":
           description: message not found
           
+  
+  /groups/:
+    get:
+      operationId: getGroups
+      tags: ["groups"]
+      summary: get all the groups of the user
+      description: |
+        Return all the non-empty group of the user
+      responses:
+        "200":
+          description: "List of groups"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/group"
+                minItems: 0
+                maxItems: 99999
+          
                   
   /groups/{groupID}/users:
     parameters:
@@ -484,7 +504,7 @@ paths:
                   
                   
 
-  
+# CAMBIARE I COMMENTI DEI MESSAGGI E RELATIVE OPERAZIONI
 
   
   
