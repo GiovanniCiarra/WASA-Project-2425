@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: WASAText
   description: |
-    WASAText is an application where users can exchanges messages themselves
+    WASAText is an application where users can exchange messages themselves
   version: 1.0.0
 
 components:
@@ -15,7 +15,7 @@ components:
       name: userID
       in: path
       required: true
-      description: identifier of a specific user
+      description: unique identifier of a specific user
     
     chatID:
       schema:
@@ -25,7 +25,7 @@ components:
       name: chatID
       in: path
       required: true
-      description: identifier of a specific chat
+      description: unique identifier of a specific chat
     
     messageID:
       schema:
@@ -35,7 +35,17 @@ components:
       name: messageID
       in: path
       required: true
-      description: identifier of a specific message
+      description: unique identifier of a specific message
+    
+    commentID:
+      schema:
+        type: integer
+        example: 1
+        readOnly: true
+      name: commentID
+      in: path
+      required: true
+      description: unique identifier of a specific comment
     
     groupID:
       schema:
@@ -45,7 +55,7 @@ components:
       name: groupID
       in: path
       required: true
-      description: identifier of a specific group
+      description: unique identifier of a specific group
       
       
   schemas:
@@ -66,9 +76,10 @@ components:
           minLength: 3
           maxLength: 16
         photo:
-          description: The photo of the user
+          description: The URL of the user's photo
           type: string
           format: url
+          pattern: '^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$'
           example: "https://example.com/images/photo.jpg"
     
     chat:
@@ -87,6 +98,7 @@ components:
           items:
             $ref: "#/components/schemas/message"
           minItems: 1
+          maxItems: 999999
       
     message:
       title: Message
@@ -99,19 +111,45 @@ components:
           example: 1
           readOnly: true
         body:
-          description: the body of the message
-          type: string
-          example: "Hi, how are you?"
-        sender: 
-          $ref: "#/components/schemas/user"
+          oneOf:  
+            - description: an alphanumeric string, body of the message
+              type: string
+              pattern: '^[a-zA-Z0-9]+$'
+              example: "Hi, how are you?"
+              minLength: 1
+              maxLength: 999
+            - description: a photo, body of the message
+              type: string
+              format: binary
+              example: "iVBORw0KGgoAAAANSUhEUgAAAAUA..."
+        senderID: 
+          description: The identifier of the sender user
+          type: integer
+          example: 1
         comments:
-          description: a comment of the message
-          type: object
-          example: "good"
+          description: a list of message's reactions (emoji)
+          type: array
+          items:
+            type: string
+            pattern: |
+              '([\u1F600-\u1F64F\u1F300-\u1F5FF\u1F680-\u1F6FF\u2600-\u26FF\u2700
+              -\u27BF\u1F1E6-\u1F1FF\u1F900-\u1F9FF\u1FA70
+              -\u1FAFF\u1F004\u1F0CF])'
+            example: "😊"
+            minLength: 1
+            maxLength: 100
+          minItems: 0
+          maxItems: 99
         timestamp:
+          description: the time when the message was sent
           type: string
           format: date-time
-          description: the time when the message was sent
+          pattern: |
+            '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:
+            \\d{2}(\\.\\d{1,6})?(Z|[+-]\\d{2}:\\d{2})$'
+          example: "2024-11-12T15:30:00Z"
+          minLength: 20
+          maxLength: 20
           
     group:
       title: Group
@@ -124,20 +162,35 @@ components:
           example: 1
           readOnly: true
         photo:
-          description: the photo of the group
+          description: The URL of the group's photo
           type: string
           format: url
+          pattern: '^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$'
           example: "https://example.com/images/photo.jpg"
         users:
           description: the list of the users in the group
           type: array
           items:
             $ref: "#/components/schemas/user"
+          minItems: 3
+          maxItems: 100
         messages:
           description: the list of the group's messages
           type: array
           items: 
             $ref: "#/components/schemas/message"
+          minItems: 1
+          maxItems: 9999
+    
+  securitySchemes:
+    bearerAuth: 
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "there is a JWT token for authentication"
+
+security:
+  - bearerAuth: []
   
 paths:
   /session:
@@ -201,7 +254,7 @@ paths:
     parameters:
       - $ref: "#/components/parameters/userID"
     put:
-      operationId: setMyUsername
+      operationId: setMyUserName
       tags: ["users"]
       summary: "update username of an existing user"
       description: |
@@ -250,6 +303,7 @@ paths:
                 photo:
                   type: string
                   format: url
+                  pattern: '^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$'
                   example: "https://example.com/images/photo.jpg"
       responses:
         "200":
@@ -316,9 +370,17 @@ paths:
               type: object
               properties:
                 body:
-                  description: the body of the message
-                  type: string
-                  example: "Hi, how are you?"  
+                  oneOf:
+                    - description: an alphanumeric string, body of the message
+                      type: string
+                      pattern: '^[a-zA-Z0-9]+$'
+                      example: "Hi, how are you?"
+                      minLength: 1
+                      maxLength: 999
+                    - description: a photo, body of the message
+                      type: string
+                      pattern: binary
+                      example: "iVBORw0KGgoAAAANSUhEUgAAAAUA..."
               required:
                 - body
       responses:
@@ -330,18 +392,68 @@ paths:
                 $ref: "#/components/schemas/message"
         "404":
           description: "user or chat not found"
-
-
-  /chats/{chatID}/messages/{messageID}/comment:
+  
+  
+  /chats/{chatID}/messages/{messageID}:
     parameters:
       - $ref: "#/components/parameters/chatID"
       - $ref: "#/components/parameters/messageID"
-    put:
+    post:
+      operationId: forwardMessage
+      tags: ["chats"]
+      summary: forward a message
+      description:  |
+        forward an existing message to another chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: 
+                TargetChatId:
+                  description: |
+                    The identifier of the Chat where 
+                    message has to be forwarded
+                  type: integer
+                  example: 1
+              required:
+                - TargetChatId
+      responses:
+        "200":
+          description: the message is forwarded succesfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/message"
+        "400":
+          description: invalid request
+        "404":
+          description: chat or original message not found
+    
+    delete:
+      operationId: deletMessage
+      tags: ["chats"]
+      summary: delete a message
+      description: |
+        delete a message from a chat
+      responses:
+        "200":
+          description: The message is deleted succesfully
+        "404":
+          description: message not found
+          
+
+  /chats/{chatID}/messages/{messageID}/comments:
+    parameters:
+      - $ref: "#/components/parameters/chatID"
+      - $ref: "#/components/parameters/messageID"
+    post:
       operationId: commentMessage
       tags: ["chats"]
       summary: "add a comment"
       description: |
-        a comment is added to a specific message
+        a comment (emoji) is created and added to a specific message's comments array
       requestBody:
         required: true
         content:
@@ -350,9 +462,15 @@ paths:
               type: object
               properties:
                 comment:
-                  description: "the comment of the message"
+                  description: "the comment of the message (emoji)"
                   type: string
-                  example: "good"
+                  pattern: |
+                    '([\u1F600-\u1F64F\u1F300-\u1F5FF\u1F680-\u1F6FF\u2600
+                    -\u26FF\u2700-\u27BF\u1F1E6-\u1F1FF\u1F900-\u1F9FF\u1FA70
+                    -\u1FAFF\u1F004\u1F0CF])'
+                  example: "😊"
+                  minLength: 1
+                  maxLength: 100
               required:
                 - comment
       responses:
@@ -364,19 +482,23 @@ paths:
           description: invalid input
         "404":
           description: message not found
-          
+  
+  
+  /chats/{chatID}/messages/{messageID}/comments/{commentID}:
+    parameters:
+      - $ref: "#/components/parameters/chatID"
+      - $ref: "#/components/parameters/messageID"
+      - $ref: "#/components/parameters/commentID"
     delete:
       operationId: deleteComment
       tags: ["chats"]
       summary: uncomment a message
-      description: |
-        the comment, if present, is deleted from 
-        the message otherwise nothing happens
+      description: the comment is deleted from the message's comments array 
       responses:
         "200":
           description: The comment is deleted from the message
         "404":
-          description: message not found
+          description: message, chat or comment not found
           
   
   /groups/:
@@ -399,7 +521,7 @@ paths:
                 maxItems: 99999
           
                   
-  /groups/{groupID}/users:
+  /groups/{groupID}/members:
     parameters:
       - $ref: "#/components/parameters/groupID"
     post:
@@ -407,7 +529,7 @@ paths:
       tags: ["groups"]
       summary: add to group
       description: |
-        a new user is added to the specific group
+        a new user is added to the specific group's members array
       requestBody:
         required: true
         content:
@@ -421,7 +543,7 @@ paths:
           description: "group not found"
           
           
-  /groups/{groupID}/users/{userID}:
+  /groups/{groupID}/members/{userID}:
     parameters:
       - $ref: "#/components/parameters/groupID"
       - $ref: "#/components/parameters/userID"
@@ -430,7 +552,7 @@ paths:
       tags: ["groups"]
       summary: leave the group
       description: |
-        the user is deleted from the group's users
+        the user is deleted from the group's members array
       responses:
         "200":
           description: "user deleted succesfully"
@@ -458,6 +580,7 @@ paths:
                 name:
                   description: "new group's name"
                   type: string
+                  pattern: '^[a-zA-Z0-9]+$'
                   example: "Wasa 24/25"
                   minLength: 1
                   maxLength: 16
@@ -493,6 +616,7 @@ paths:
                   description: new group's photo
                   type: string
                   format: url
+                  pattern: '^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$'
                   example: "https://example.com/images/photo.jpg"
               required:   
                 - photo
@@ -501,10 +625,7 @@ paths:
           description: group's photo updated
         "404":
           description: group not found
-                  
-                  
 
-# CAMBIARE I COMMENTI DEI MESSAGGI E RELATIVE OPERAZIONI
 
   
   
