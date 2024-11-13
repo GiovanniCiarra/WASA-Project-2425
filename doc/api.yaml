@@ -9,6 +9,7 @@ components:
   parameters:
     userID:
       schema:
+        description: integer that represent a user
         type: integer
         example: 1
         readOnly: true
@@ -19,6 +20,7 @@ components:
     
     chatID:
       schema:
+        description: integer that represent a chat
         type: integer
         example: 1
         readOnly: true
@@ -29,6 +31,7 @@ components:
     
     messageID:
       schema:
+        description: integer that represent a message
         type: integer
         example: 1
         readOnly: true
@@ -39,6 +42,7 @@ components:
     
     commentID:
       schema:
+        description: integer that represent a comment
         type: integer
         example: 1
         readOnly: true
@@ -49,6 +53,7 @@ components:
     
     groupID:
       schema:
+        description: integer that represent a group
         type: integer
         example: 1
         readOnly: true
@@ -72,6 +77,7 @@ components:
         username:
           description: The username of the user
           type: string
+          pattern: '^.*?$'
           example: "Giovanni"
           minLength: 3
           maxLength: 16
@@ -81,6 +87,8 @@ components:
           format: url
           pattern: '^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$'
           example: "https://example.com/images/photo.jpg"
+          minLength: 0
+          maxLength: 99
     
     chat:
       title: Chat
@@ -114,14 +122,17 @@ components:
           oneOf:  
             - description: an alphanumeric string, body of the message
               type: string
-              pattern: '^[a-zA-Z0-9]+$'
+              pattern: '^.*?$'
               example: "Hi, how are you?"
               minLength: 1
               maxLength: 999
             - description: a photo, body of the message
               type: string
               format: binary
-              example: "iVBORw0KGgoAAAANSUhEUgAAAAUA..."
+              pattern: '^.*?$'
+              example: "001010101010000101010"
+              minLength: 0
+              maxLength: 9999
         senderID: 
           description: The identifier of the sender user
           type: integer
@@ -131,10 +142,7 @@ components:
           type: array
           items:
             type: string
-            pattern: |
-              '([\u1F600-\u1F64F\u1F300-\u1F5FF\u1F680-\u1F6FF\u2600-\u26FF\u2700
-              -\u27BF\u1F1E6-\u1F1FF\u1F900-\u1F9FF\u1FA70
-              -\u1FAFF\u1F004\u1F0CF])'
+            pattern: '^.*?$'
             example: "😊"
             minLength: 1
             maxLength: 100
@@ -144,9 +152,7 @@ components:
           description: the time when the message was sent
           type: string
           format: date-time
-          pattern: |
-            '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:
-            \\d{2}(\\.\\d{1,6})?(Z|[+-]\\d{2}:\\d{2})$'
+          pattern: '^.*?$'
           example: "2024-11-12T15:30:00Z"
           minLength: 20
           maxLength: 20
@@ -167,6 +173,8 @@ components:
           format: url
           pattern: '^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$'
           example: "https://example.com/images/photo.jpg"
+          minLength: 0
+          maxLength: 99
         users:
           description: the list of the users in the group
           type: array
@@ -191,6 +199,19 @@ components:
 
 security:
   - bearerAuth: []
+
+tags:
+  - name: login
+    description: operations relative to the login of the user
+    
+  - name: users
+    description: operations relative to the users
+  
+  - name: chats
+    description: operations relative to the chats
+    
+  - name: groups
+    description: operation relative to the groups
   
 paths:
   /session:
@@ -212,7 +233,7 @@ paths:
                 name:
                   type: string
                   example: Maria
-                  pattern: 'ˆ.*?$'
+                  pattern: '^.*?$'
                   minLength: 3
                   maxLength: 16
         required: true
@@ -243,6 +264,7 @@ paths:
           content:
             application/json:
               schema:
+                description: Return an array with all the users registered
                 type: array
                 items: 
                   $ref: "#/components/schemas/user"
@@ -265,11 +287,14 @@ paths:
         content: 
           application/json:
             schema: 
+              description: an object with the new username
               type: object
               properties:
                 username: 
+                  description: The new username
                   type: string
-                  pattern: "^[a-zA-Z0-9]+$"
+                  pattern: '^.*?$'
+                  example: "Giovanni02"
                   minLength: 3
                   maxLength: 16
               required:
@@ -277,6 +302,10 @@ paths:
       responses:
         "200":
           description: "User's username is updated successfully"
+          content: 
+            application/json:
+              schema:
+                $ref: "#/components/schemas/user"
         "400":
           description: "invalid input"
         "404":
@@ -298,16 +327,24 @@ paths:
         content: 
           application/json:
             schema: 
+              description: An object with the new photo
               type: object
               properties:
                 photo:
+                  description: the new photo's url
                   type: string
                   format: url
                   pattern: '^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$'
                   example: "https://example.com/images/photo.jpg"
+                  minLength: 0
+                  maxLength: 99
       responses:
         "200":
           description: "User's photo is updated successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/user"
         "400":
           description: "invalid input"
         "404":
@@ -327,6 +364,7 @@ paths:
           content:
             application/json:
               schema:
+                description: an array containing the all the chats of the user
                 type: array
                 items:
                   $ref: "#/components/schemas/chat"
@@ -367,22 +405,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                body:
-                  oneOf:
-                    - description: an alphanumeric string, body of the message
-                      type: string
-                      pattern: '^[a-zA-Z0-9]+$'
-                      example: "Hi, how are you?"
-                      minLength: 1
-                      maxLength: 999
-                    - description: a photo, body of the message
-                      type: string
-                      pattern: binary
-                      example: "iVBORw0KGgoAAAANSUhEUgAAAAUA..."
-              required:
-                - body
+              $ref: "#/components/schemas/message"
       responses:
         "201":
           description: The message is created and is sent succesfully
@@ -409,6 +432,7 @@ paths:
         content:
           application/json:
             schema:
+              description: a chatId
               type: object
               properties: 
                 TargetChatId:
@@ -432,13 +456,13 @@ paths:
           description: chat or original message not found
     
     delete:
-      operationId: deletMessage
+      operationId: deleteMessage
       tags: ["chats"]
       summary: delete a message
       description: |
         delete a message from a chat
       responses:
-        "200":
+        "204":
           description: The message is deleted succesfully
         "404":
           description: message not found
@@ -459,15 +483,13 @@ paths:
         content:
           application/json:
             schema:
+              description: an emoji
               type: object
               properties:
                 comment:
                   description: "the comment of the message (emoji)"
                   type: string
-                  pattern: |
-                    '([\u1F600-\u1F64F\u1F300-\u1F5FF\u1F680-\u1F6FF\u2600
-                    -\u26FF\u2700-\u27BF\u1F1E6-\u1F1FF\u1F900-\u1F9FF\u1FA70
-                    -\u1FAFF\u1F004\u1F0CF])'
+                  pattern: '^.*?$'
                   example: "😊"
                   minLength: 1
                   maxLength: 100
@@ -478,6 +500,10 @@ paths:
           description: | 
             A comment is created and added to a specific message
             content
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/message"
         "400":
           description: invalid input
         "404":
@@ -490,13 +516,17 @@ paths:
       - $ref: "#/components/parameters/messageID"
       - $ref: "#/components/parameters/commentID"
     delete:
-      operationId: deleteComment
+      operationId: uncommentComment
       tags: ["chats"]
       summary: uncomment a message
       description: the comment is deleted from the message's comments array 
       responses:
         "200":
           description: The comment is deleted from the message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/message"
         "404":
           description: message, chat or comment not found
           
@@ -514,6 +544,9 @@ paths:
           content:
             application/json:
               schema:
+                description: |
+                  Return the array containing 
+                  all the groups of the user
                 type: array
                 items:
                   $ref: "#/components/schemas/group"
@@ -537,7 +570,7 @@ paths:
             schema:
               $ref: "#/components/schemas/user"
       responses:
-        "200":
+        "204":
           description: "user added succesfully"
         "404":
           description: "group not found"
@@ -554,7 +587,7 @@ paths:
       description: |
         the user is deleted from the group's members array
       responses:
-        "200":
+        "204":
           description: "user deleted succesfully"
         "404":
           description: "group not found"
@@ -575,12 +608,13 @@ paths:
         content:
           application/json:
             schema:
+              description: object representing a group's name
               type: object
               properties:
                 name:
                   description: "new group's name"
                   type: string
-                  pattern: '^[a-zA-Z0-9]+$'
+                  pattern: '^.*?$'
                   example: "Wasa 24/25"
                   minLength: 1
                   maxLength: 16
@@ -589,6 +623,10 @@ paths:
       responses:
         "200": 
           description: "group's name updated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/group"
         "400":
           description: "invalid input"
         "404":
@@ -610,6 +648,7 @@ paths:
         content:
           application/json:
             schema:
+              description: object representing a group photo (url)
               type: object
               properties:
                 photo:
@@ -618,11 +657,17 @@ paths:
                   format: url
                   pattern: '^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$'
                   example: "https://example.com/images/photo.jpg"
+                  minLength: 0
+                  maxLength: 99
               required:   
                 - photo
       responses:
         "200":
           description: group's photo updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/group"
         "404":
           description: group not found
 
