@@ -143,7 +143,7 @@ components:
           items:
             type: string
             pattern: '^.*?$'
-            example: "😊"
+            example: "\u2764\uFE0F"
             minLength: 1
             maxLength: 100
           minItems: 0
@@ -490,7 +490,7 @@ paths:
                   description: "the comment of the message (emoji)"
                   type: string
                   pattern: '^.*?$'
-                  example: "😊"
+                  example: "\u2764\uFE0F"
                   minLength: 1
                   maxLength: 100
               required:
@@ -636,7 +636,7 @@ paths:
   /groups/{groupID}/photo:
     parameters:
       - $ref: "#/components/parameters/groupID"
-    patch:
+    put:
       operationId: setGroupPhoto
       tags: ["groups"]
       summary: set/change the group's photo
@@ -671,6 +671,3 @@ paths:
         "404":
           description: group not found
 
-
-  
-  
