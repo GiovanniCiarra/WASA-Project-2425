@@ -231,6 +231,7 @@ paths:
               type: object
               properties:
                 name:
+                  description: Username
                   type: string
                   example: Maria
                   pattern: '^.*?$'
@@ -248,6 +249,7 @@ paths:
                   identifier:
                     # change here if you decide to use an integer
                     # or any other type of identifier
+                    description: identifier of a user
                     type: string
                     example: "abcdef012345"
   
@@ -432,7 +434,7 @@ paths:
         content:
           application/json:
             schema:
-              description: a chatId
+              description: chatId
               type: object
               properties: 
                 TargetChatId:
@@ -516,7 +518,7 @@ paths:
       - $ref: "#/components/parameters/messageID"
       - $ref: "#/components/parameters/commentID"
     delete:
-      operationId: uncommentComment
+      operationId: uncommentMessage
       tags: ["chats"]
       summary: uncomment a message
       description: the comment is deleted from the message's comments array 
