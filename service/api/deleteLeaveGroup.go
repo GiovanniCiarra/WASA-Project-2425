@@ -13,7 +13,8 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 	//Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
+		http.Error(writer, "Failed to retrieve userId", http.StatusUnauthorized)
 		return
 	}
 
@@ -35,7 +36,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 
 	if !isGroup {
 		http.Error(writer, "Cannot leave a private chat", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Cannot leave a private chat")
+		ctx.Logger.Error("Cannot leave a private chat")
 		return
 	}
 
@@ -49,7 +50,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 
 	if !isMember {
 		http.Error(writer, "User is not a member of this group", http.StatusForbidden)
-		ctx.Logger.WithError(err).Error("User is not a member of this group")
+		ctx.Logger.Error("User is not a member of this group")
 		return
 	}
 
@@ -82,6 +83,10 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 	//Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
-	ctx.Logger.Infof("deleteLeaveGroup completed successfully")
+	ctx.Logger.Infof("user %d leave successfully the group %d", userId, conversationId)
+
+	if !hasMembers {
+		ctx.Logger.Infof("group %d is deleted because it has no members", conversationId)
+	}
 
 }

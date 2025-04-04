@@ -13,7 +13,8 @@ func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *ht
 	//Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
+		http.Error(writer, "Failed to retrieve userId", http.StatusUnauthorized)
 		return
 	}
 
@@ -34,7 +35,7 @@ func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *ht
 	}
 
 	if !hasCommented {
-		ctx.Logger.WithError(err).Error("User has no comment on this message")
+		ctx.Logger.Error("User has no comment on this message")
 		http.Error(writer, "User has no comment on this message", http.StatusNotFound)
 		return
 	}
@@ -50,6 +51,6 @@ func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *ht
 	//Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
-	ctx.Logger.Infof("deleteUncommentMessage succesfull")
+	ctx.Logger.Infof("comment is deleted successfully from message %d", messageId)
 
 }

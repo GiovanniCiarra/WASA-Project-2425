@@ -35,6 +35,7 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 
 	//Controllo se l'utente esiste per ricevere il suo identifier e restituirlo come risposta http
 	var userId int
+	httpStatusResult := http.StatusOK
 	userId, err = rt.db.GetUserIdByName(requestBody.Name)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) { //se l'utente non esiste, lo creo
@@ -44,6 +45,7 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 				http.Error(writer, "User Creation Failed", http.StatusInternalServerError)
 				return
 			}
+			httpStatusResult = http.StatusCreated
 		} else {
 			ctx.Logger.WithError(err).Error("User creation failed")
 			http.Error(writer, "User Creation Failed", http.StatusInternalServerError)
@@ -58,7 +60,7 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 
 	writer.Header().Set("content-type", "application/json")
 	writer.Header().Set("Autenthication", fmt.Sprintf("bearerAuth: %d", userId))
-	writer.WriteHeader(http.StatusCreated)
+	writer.WriteHeader(httpStatusResult)
 
 	encoder := json.NewEncoder(writer)
 	err = encoder.Encode(response)

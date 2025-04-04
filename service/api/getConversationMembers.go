@@ -14,7 +14,8 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 	//Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
+		http.Error(writer, "Failed to retrieve userId", http.StatusUnauthorized)
 		return
 	}
 
@@ -36,7 +37,7 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 
 	if !isMember {
 		http.Error(writer, "user not part of the conversation", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("user not part of the conversation")
+		ctx.Logger.Error("user not part of the conversation")
 		return
 	}
 
@@ -59,5 +60,5 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 	}
 
 	//Scrivo il successo nel logger
-	ctx.Logger.Infof("GetConversationMembers completed succesfull")
+	ctx.Logger.Infof("GetConversationMembers completed succesfully")
 }

@@ -1,5 +1,7 @@
 package database
 
+import "fmt"
+
 func (db *appdbimpl) GetMessageById(messageId int) (Message, error) {
 	var message Message
 
@@ -9,7 +11,7 @@ func (db *appdbimpl) GetMessageById(messageId int) (Message, error) {
 		&message.Type,
 	)
 	if err != nil {
-		return Message{}, err
+		return Message{}, fmt.Errorf("error in query execution: %w", err)
 	}
 
 	return message, nil

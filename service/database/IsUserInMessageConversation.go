@@ -1,5 +1,7 @@
 package database
 
+import "fmt"
+
 func (db *appdbimpl) IsUserInMessageConversation(userId, messageId int) (bool, error) {
 	var count int
 
@@ -10,7 +12,7 @@ func (db *appdbimpl) IsUserInMessageConversation(userId, messageId int) (bool, e
 		messageId, userId).Scan(&count)
 
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error in query execution: %w", err)
 	}
 
 	return count > 0, nil

@@ -58,7 +58,10 @@ components:
       type: object
       properties:
         userId:
-          $ref: "#/components/parameters/userId"
+          description: The identifier of the user
+          type: integer
+          example: 1
+          readOnly: true
         username:
           description: The user's username
           type: string
@@ -72,7 +75,7 @@ components:
           format: byte
           example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD..."
           minLength: 0
-          maxLength: 10000000
+          maxLength: 1000
 
     conversation:
       title: Conversation
@@ -80,7 +83,10 @@ components:
       type: object
       properties:
         conversationId:
-          $ref: "#/components/parameters/conversationId"
+          description: The identifier of the conversation
+          type: integer
+          example: 1
+          readOnly: true
         type:
           description: The type of the conversation (chat or group)
           type: string
@@ -103,9 +109,8 @@ components:
           format: byte
           example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD..."
           minLength: 0
-          maxLength: 10000000
+          maxLength: 1000
         lastMessage:
-          description: most recent message in the conversation
           $ref: "#/components/schemas/message"
 
     message:
@@ -114,10 +119,15 @@ components:
       type: object
       properties:
         messageId:
-          $ref: "#/components/parameters/messageId"
+          description: The identifier of the message
+          type: integer
+          example: 1
+          readOnly: true
         conversationId:
           description: the identifier of the message's conversation
-          $ref: "#/components/parameters/conversationId"
+          type: integer
+          example: 1
+          readOnly: true
         type:
           description: the message's type (text or photo)
           type: string
@@ -134,13 +144,13 @@ components:
               pattern: "^.*?$"
               example: "Hi, how are you?"
               minLength: 1
-              maxLength: 5000
+              maxLength: 200
             - description: a photo, body of the message
               type: string
               format: byte
               example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD..."
               minLength: 0
-              maxLength: 10000000
+              maxLength: 1000
         sender:
           description: The username of the sender
           type: string
@@ -186,17 +196,22 @@ components:
       type: object
       properties:
         commentId:
-          $ref: "#/components/parameters/commentId"
+          description: The identifier of the comment
+          type: integer
+          example: 1
+          readOnly: true
         messageId:
           description: the identifier of the message's comment
-          $ref: "#/components/parameters/messageId"
+          type: integer
+          example: 1
+          readOnly: true
         content:
           description: an emoji, body of the comment
           type: string
           pattern: "^.*?$"
           example: "AgckycvkuyvVVUVYU75rr..."
           minLength: 0
-          maxLength: 1398101 #(1MB)
+          maxLength: 1000 #(1MB)
         sender:
           description: The username of the sender
           type: string
@@ -232,7 +247,7 @@ components:
           format: byte
           example: "AgckycvkuyvVVUVYU75rr..."
           minLength: 0
-          maxLength: 1398101 #(1MB)
+          maxLength: 1000 #(1MB)
         members:
           description: List of userId for group creation or single for chat
           type: array
@@ -291,7 +306,7 @@ paths:
                   maxLength: 16
         required: true
       responses:
-        "201":
+        "200":
           description: User log-in action successful
           content:
             application/json:
@@ -299,7 +314,16 @@ paths:
                 type: object
                 properties:
                   identifier:
-                    $ref: "#/components/parameters/userId"
+                    $ref: "#/components/schemas/user/properties/userId"
+        "201":
+          description: User creation and log-in action successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  identifier:
+                    $ref: "#/components/schemas/user/properties/userId"
         "400":
           description: Invalid Request
         "500":
@@ -323,7 +347,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/user"
                 minItems: 0
-                maxItems: 99999
+                maxItems: 99
         "401":
           description: Unauthorized
         "500":
@@ -342,8 +366,11 @@ paths:
         content:
           application/json:
             schema:
+              type: object
               description: The new username
-              $ref: "#/components/schemas/user/properties/username"
+              properties:
+                username:
+                  $ref: "#/components/schemas/user/properties/username"
               required:
                 - username
       responses:
@@ -352,7 +379,6 @@ paths:
           content:
             application/json:
               schema:
-                description: The new username
                 $ref: "#/components/schemas/user/properties/username"
         "400":
           description: "bad Request"
@@ -374,8 +400,11 @@ paths:
         content:
           application/json:
             schema:
+              type: object
               description: The new photo
-              $ref: "#/components/schemas/user/properties/photo"
+              properties:
+                photo:
+                  $ref: "#/components/schemas/user/properties/photo"
               required:
                 - photo
       responses:
@@ -384,7 +413,6 @@ paths:
           content:
             application/json:
               schema:
-                description: The new photo
                 $ref: "#/components/schemas/user/properties/photo"
         "400":
           description: Bad Request
@@ -410,7 +438,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/conversation"
                 minItems: 0
-                maxItems: 99999
+                maxItems: 99
         "401":
           description: Unauthorized
         "500":
@@ -432,8 +460,7 @@ paths:
           content:
             application/json:
               schema:
-                description: The Id of the newly created conversation
-                $ref: "#/components/parameters/conversationId"
+                $ref: "#/components/schemas/conversation/properties/conversationId"
         "400":
           description: Bad Request
         "401":
@@ -441,7 +468,7 @@ paths:
         "500":
           description: Internal server error
 
-  /conversations/{conversationID}:
+  /conversations/{conversationId}:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     get:
@@ -460,7 +487,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/message"
                 minItems: 0
-                maxItems: 9999
+                maxItems: 99
         "400":
           description: Bad Request
         "401":
@@ -468,7 +495,7 @@ paths:
         "500":
           description: Internal Server Error
 
-  /conversations/{conversationID}/messages:
+  /conversations/{conversationId}/messages:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     post:
@@ -485,10 +512,8 @@ paths:
             schema:
               properties:
                 content:
-                  description: the content of the message
                   $ref: "#/components/schemas/message/properties/content"
                 type:
-                  description: the type of the message
                   $ref: "#/components/schemas/message/properties/type"
       responses:
         "201":
@@ -496,7 +521,6 @@ paths:
           content:
             application/json:
               schema:
-                description: the message just created
                 $ref: "#/components/schemas/message"
         "400":
           description: Bad Request
@@ -507,9 +531,8 @@ paths:
         "500":
           description: Internal Server Error
 
-  /conversations/{conversationId}/messages/{messageID}/forward:
+  /messages/{messageId}/forward:
     parameters:
-      - $ref: "#/components/parameters/conversationId"
       - $ref: "#/components/parameters/messageId"
     post:
       operationId: forwardMessage
@@ -525,42 +548,51 @@ paths:
               description: conversationId
               type: object
               properties:
-                TargetChatId:
-                  description: |
-                    The identifier of the Chat where 
-                    message has to be forwarded
-                  type: integer
-                  example: 1
+                targetChatId:
+                  $ref: "#/components/schemas/conversation/properties/conversationId"
               required:
-                - TargetChatId
+                - targetChatId
       responses:
         "201":
-          description: the message is forwarded succesfully
+          description: the message is forwarded succesfully and a new message is created
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/message"
         "400":
-          description: invalid request
-        "404":
-          description: chat or original message not found
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: internal Server Error
 
-  /conversations/{conversationId}/messages/{messageID}:
+  /conversations/{conversationId}/messages/{messageId}:
+    parameters:
+      - $ref: "#/components/parameters/conversationId"
+      - $ref: "#/components/parameters/messageId"
     delete:
       operationId: deleteMessage
       tags: ["chats"]
       summary: delete a message
       description: |
-        delete a message from a chat
+        delete a message from a conversation
       responses:
         "204":
           description: The message is deleted succesfully
-        "404":
-          description: message not found
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: internal Server Error
 
-  /messages/{messageID}/comments:
+  /messages/{messageId}/comments:
     parameters:
-      - $ref: "#/components/parameters/messageID"
+      - $ref: "#/components/parameters/messageId"
     post:
       operationId: commentMessage
       tags: ["chats"]
@@ -581,22 +613,26 @@ paths:
                   pattern: "^.*?$"
                   example: "\u2764\uFE0F"
                   minLength: 1
-                  maxLength: 100
+                  maxLength: 50
               required:
                 - content
       responses:
         "201":
-          description: |
-            A comment is created and added to a specific message
-            content
+          description: A comment is created and added to a specific message
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/message"
+                $ref: "#/components/schemas/comment"
         "400":
-          description: invalid input
-        "404":
-          description: message not found
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict - The user has already commented on the message
+        "500":
+          description: internal Server Error
 
     delete:
       operationId: uncommentMessage
@@ -604,40 +640,18 @@ paths:
       summary: uncomment a message
       description: the comment is deleted from the message's comments array
       responses:
-        "200":
-          description: The comment is deleted from the message
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/message"
-        "404":
-          description: message, chat or comment not found
-
-  /conversations/{conversationID}/add:
-    parameters:
-      - $ref: "#/components/parameters/conversationId"
-    post:
-      operationId: addToGroup
-      tags: ["groups"]
-      summary: add to group
-      description: |
-        a new user is added to the specific group's members array
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              description: The identifier of the new member
-              type: integer
-              example: 1
-              readOnly: true
-      responses:
         "204":
-          description: "user added succesfully"
+          description: The comment is deleted from the message
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
         "404":
-          description: "group not found"
+          description: Not Found
+        "500":
+          description: internal Server Error
 
-  /conversations/{conversationID}/members:
+  /conversations/{conversationId}/members:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     get:
@@ -645,10 +659,10 @@ paths:
       tags: ["groups"]
       summary: get conversation's members
       description: |
-        return all the conversation's members
+        return all the members of the conversation
       responses:
         "200":
-          description: return all the conversation's members
+          description: return all the members of the conversastion
           content:
             application/json:
               schema:
@@ -656,13 +670,52 @@ paths:
                 items:
                   $ref: "#/components/schemas/user"
                 minItems: 0
-                maxItems: 99999
+                maxItems: 50
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
         "500":
-          description: "Internal Server Error"
+          description: internal Server Error
 
-  /conversations/{conversationID}/leave:
+  /conversations/{conversationId}/add:
     parameters:
-      - $ref: "#/components/parameters/conversationID"
+      - $ref: "#/components/parameters/conversationId"
+    post:
+      operationId: addToGroup
+      tags: ["groups"]
+      summary: add to group
+      description: |
+        a new user is added to the specific group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: The identifier of the new member
+              properties:
+                userId:
+                  $ref: "#/components/schemas/user/properties/userId"
+              required:
+                - userId
+      responses:
+        "204":
+          description: "user added succesfully"
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: internal Server Error
+
+  /conversations/{conversationId}/leave:
+    parameters:
+      - $ref: "#/components/parameters/conversationId"
     delete:
       operationId: leaveGroup
       tags: ["groups"]
@@ -671,13 +724,19 @@ paths:
         the user is deleted from the group and, if the group is empty, it is deleted too
       responses:
         "204":
-          description: "user deleted succesfully"
-        "404":
-          description: "group not found"
+          description: user deleted successfully
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: internal Server Error
 
-  /conversations/{conversationID}/name:
+  /conversations/{conversationId}/name:
     parameters:
-      - $ref: "#/components/parameters/groupID"
+      - $ref: "#/components/parameters/conversationId"
     put:
       operationId: setGroupName
       tags: ["groups"]
@@ -694,29 +753,24 @@ paths:
               type: object
               properties:
                 name:
-                  description: "new group's name"
-                  type: string
-                  pattern: "^.*?$"
-                  example: "Wasa 24/25"
-                  minLength: 1
-                  maxLength: 16
+                  $ref: "#/components/schemas/conversation/properties/name"
               required:
                 - name
       responses:
         "200":
-          description: "group's name updated"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/conversation"
+          description: group's name updated successfully
         "400":
-          description: "invalid input"
-        "404":
-          description: "group not found"
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: internal Server Error
 
-  /conversations/{conversationID}/photo:
+  /conversations/{conversationId}/photo:
     parameters:
-      - $ref: "#/components/parameters/groupID"
+      - $ref: "#/components/parameters/conversationId"
     put:
       operationId: setGroupPhoto
       tags: ["groups"]
@@ -733,21 +787,17 @@ paths:
               type: object
               properties:
                 photo:
-                  description: new group's photo
-                  type: string
-                  format: url
-                  pattern: '^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$'
-                  example: "https://example.com/images/photo.jpg"
-                  minLength: 0
-                  maxLength: 99
+                  $ref: "#/components/schemas/conversation/properties/photo"
               required:
                 - photo
       responses:
         "200":
-          description: group's photo updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/conversation"
-        "404":
-          description: group not found
+          description: group's photo updated successfully
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: internal Server Error

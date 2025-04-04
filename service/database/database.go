@@ -106,6 +106,7 @@ type AppDatabase interface {
 	UpdateMessagesToRead(userId, conversationId int) error
 	GetConversationMembers(conversationId int) ([]User, error)
 	UpdateMessageStatus(messageId int) error
+	DoesUserExist(userId int) (bool, error)
 
 	Ping() error
 }

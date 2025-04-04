@@ -15,7 +15,8 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 	//Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
+		http.Error(writer, "Failed to retrieve userId", http.StatusUnauthorized)
 		return
 	}
 
@@ -53,11 +54,11 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 	}
 	if !isMember {
 		http.Error(writer, "User is not allowed to comment this message", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("User is not allowed to comment this message")
+		ctx.Logger.Error("User is not allowed to comment this message")
 		return
 	}
 
-	//Controllo che non ci siano altri commenti dello stesso utente per lo  stesso messaggio
+	//Controllo che non ci siano altri commenti dello stesso utente per lo stesso messaggio
 	hasCommented, err := rt.db.HasUserCommentedMessage(userId, messageId)
 	if err != nil {
 		http.Error(writer, "Database error while cheking comment existance", http.StatusInternalServerError)
@@ -67,7 +68,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 
 	if hasCommented {
 		http.Error(writer, "User has already commented this message", http.StatusConflict)
-		ctx.Logger.WithError(err).Error("User has already commented this message")
+		ctx.Logger.Error("User has already commented this message")
 		return
 	}
 
@@ -89,7 +90,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 
 	//Scrivo la risposta
 	response := struct {
-		CommentId int    `json:"id"`
+		CommentId int    `json:"commentId"`
 		MessageId int    `json:"messageId"`
 		Sender    string `json:"sender"`
 		Content   string `json:"content"`
@@ -101,6 +102,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		Content:   requestBody.Content,
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}
+
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -108,4 +110,6 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		http.Error(writer, "Failed to create response", http.StatusInternalServerError)
 		return
 	}
+
+	ctx.Logger.Infof("comment %d is added successfully on message %d", commentId, messageId)
 }

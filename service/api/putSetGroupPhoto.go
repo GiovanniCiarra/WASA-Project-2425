@@ -14,7 +14,8 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 	//Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
+		http.Error(writer, "Failed to retrieve userId", http.StatusUnauthorized)
 		return
 	}
 
@@ -26,6 +27,7 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
+	//Controllo che la conversazione sia un gruppo
 	isGroup, err := rt.db.IsGroup(conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking conversation type", http.StatusInternalServerError)
@@ -35,7 +37,7 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 
 	if !isGroup {
 		http.Error(writer, "Cannot rename a privat chat", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Cannot rename a private chat")
+		ctx.Logger.Error("Cannot rename a private chat")
 		return
 	}
 
@@ -49,7 +51,7 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 
 	if !isMember {
 		http.Error(writer, "User is not a member of this group", http.StatusForbidden)
-		ctx.Logger.WithError(err).Error("User is not a member of this group")
+		ctx.Logger.Error("User is not a member of this group")
 		return
 	}
 
@@ -77,6 +79,6 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 	//Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusOK)
 
-	ctx.Logger.Infof("putSetGroupPhoto completed successfully")
+	ctx.Logger.Infof("group's photo is updated successfully")
 
 }

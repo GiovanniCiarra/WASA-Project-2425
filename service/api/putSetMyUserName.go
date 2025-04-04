@@ -33,7 +33,7 @@ func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Req
 
 	//Controllo la validità del nuovo username (compreso tra 3 e 16 caratteri e contenete caratteri alfanumerici(non solo spazi))
 	if !isValidName(requestBody.Username) {
-		rt.baseLogger.Error("Invalid name")
+		ctx.Logger.WithError(err).Error("Invalid name")
 		http.Error(writer, "Invalid name", http.StatusBadRequest)
 		return
 	}

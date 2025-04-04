@@ -13,7 +13,8 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 	//Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
+		http.Error(writer, "Failed to retrieve userId", http.StatusUnauthorized)
 		return
 	}
 
@@ -41,7 +42,7 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 	}
 
 	if !isOwner {
-		ctx.Logger.WithError(err).Error("User is not the owner of this message")
+		ctx.Logger.Error("User is not the owner of this message")
 		http.Error(writer, "User is not the owner of this message", http.StatusForbidden)
 		return
 	}
@@ -75,5 +76,8 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 	//Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
-	ctx.Logger.Infof("deleteMessage succesfull")
+	ctx.Logger.Infof("message %d is deleted successfully", messageId)
+	if !hasMessages {
+		ctx.Logger.Infof("conversation %d is deleted succesfully because empty", conversationId)
+	}
 }

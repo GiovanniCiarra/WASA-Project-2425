@@ -37,11 +37,12 @@ See the `main.go` file inside the `cmd/webapi` for a full usage example.
 package api
 
 import (
-	"errors"
 	"Progetto/service/database"
+	"errors"
+	"net/http"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 // Config is used to provide dependencies and configuration to the New function.

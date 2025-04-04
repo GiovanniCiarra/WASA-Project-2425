@@ -14,7 +14,8 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 	//Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusUnauthorized)
+		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
+		http.Error(writer, "Failed to retrieve userId", http.StatusUnauthorized)
 		return
 	}
 
@@ -36,7 +37,7 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 
 	if !isGroup {
 		http.Error(writer, "Cannot rename a privat chat", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Cannot rename a private chat")
+		ctx.Logger.Error("Cannot rename a private chat")
 		return
 	}
 
@@ -50,7 +51,7 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 
 	if !isMember {
 		http.Error(writer, "User is not a member of this group", http.StatusForbidden)
-		ctx.Logger.WithError(err).Error("User is not a member of this group")
+		ctx.Logger.Error("User is not a member of this group")
 		return
 	}
 
@@ -65,10 +66,10 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Controllo che il nuovo nome del gruppo sia valido
-	if len(requestBody.Name) < 3 || len(requestBody.Name) > 16 {
-		http.Error(writer, "Invalid group name length", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Invalid group name length")
+	//Controllo la validità del nuovo nome (compreso tra 3 e 16 caratteri e contenete caratteri alfanumerici(non solo spazi))
+	if !isValidName(requestBody.Name) {
+		ctx.Logger.WithError(err).Error("Invalid name")
+		http.Error(writer, "Invalid name", http.StatusBadRequest)
 		return
 	}
 
@@ -83,5 +84,5 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 	//Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusOK)
 
-	ctx.Logger.Infof("putSetGroupName completed successfully")
+	ctx.Logger.Infof("group's name is updated succesfully: %s", requestBody.Name)
 }
