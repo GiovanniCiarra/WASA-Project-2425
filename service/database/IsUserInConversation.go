@@ -12,5 +12,5 @@ func (db *appdbimpl) IsUserInConversation(userId int, conversationId int) (bool,
 		return false, fmt.Errorf("error checking conversation membership: %w", err)
 	}
 
-	return count > 1, nil
+	return count > 0, nil
 }

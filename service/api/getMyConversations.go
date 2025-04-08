@@ -18,6 +18,20 @@ func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
+	//Controllo che lo userId sia associato ad un utente valido
+	valid, err := rt.db.DoesUserExist(userId)
+	if err != nil {
+		ctx.Logger.WithError(err).Error("Impossible to validate user")
+		http.Error(writer, "Impossible to validate user", http.StatusInternalServerError)
+		return
+	}
+
+	if !valid {
+		ctx.Logger.Error("userId is not valid")
+		http.Error(writer, "UserId is not valid", http.StatusUnauthorized)
+		return
+	}
+
 	//Richiamo la funzione del database per ottenere la lista delle chat
 	ChatsList, err := rt.db.GetMyConversations(userId)
 

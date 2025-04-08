@@ -18,6 +18,20 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 		return
 	}
 
+	//Controllo che lo userId sia associato ad un utente valido
+	valid, err := rt.db.DoesUserExist(userId)
+	if err != nil {
+		ctx.Logger.WithError(err).Error("Impossible to validate user")
+		http.Error(writer, "Impossible to validate user", http.StatusInternalServerError)
+		return
+	}
+
+	if !valid {
+		ctx.Logger.Error("userId is not valid")
+		http.Error(writer, "UserId is not valid", http.StatusUnauthorized)
+		return
+	}
+
 	//Decodifico la richiesta JSON
 	var requestBody struct {
 		Name    string `json:"name,omitempty"`
@@ -31,7 +45,23 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Analizzo la richiesta e creo la conversazione
+	//Controllo se i memebri siano utenti validi
+	for _, member := range requestBody.Members {
+		ok, err := rt.db.DoesUserExist(member)
+		if err != nil {
+			ctx.Logger.WithError(err).Error("Impossible to validate members")
+			http.Error(writer, "Impossible to validate members", http.StatusInternalServerError)
+			return
+		}
+
+		if !ok {
+			ctx.Logger.Error("member userId is not valid")
+			http.Error(writer, "member userId is not valid", http.StatusBadRequest)
+			return
+		}
+	}
+
+	//Analizzo la richiesta e creo la conversazione.
 	conversationId, err := rt.db.CreateConversation(userId, requestBody.Name, requestBody.Photo, requestBody.Members)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to create conversation")
@@ -54,6 +84,6 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 	}
 
 	//Scrivo il successo nel logger
-	ctx.Logger.Infof("postCreateConversation completed succesfull: %d", conversationId)
+	ctx.Logger.Infof("postCreateConversation completed succesfully: %d", conversationId)
 
 }

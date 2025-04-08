@@ -9,7 +9,11 @@ const router = createRouter({
 	routes: [
 		{ path: "/Login", component: LoginView },
 		{ path: "/Home", component: HomeView },
-		{ path: "/Conversation/:conversationId", component: ConversationView },
+		{
+			path: "/Conversations/id/:conversationId",
+			component: ConversationView,
+		},
+		{ path: "/Conversations/:userId", component: ConversationView },
 		{ path: "/Profile/:userId", component: ProfileView },
 		{ path: "/:pathMatch(.*)*", redirect: "/Login" },
 	],

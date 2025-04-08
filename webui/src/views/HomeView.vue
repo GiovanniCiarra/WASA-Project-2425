@@ -1,60 +1,141 @@
+<template>
+	<div class="container">
+		<!-- Colonna sinistra per gli utenti, utilizza il componente UserList -->
+		<div class="users-column">
+			<UserList
+				:users="users"
+				:userError="userError"
+				@userSelected="goToConversation"
+			/>
+		</div>
+		<!-- Colonna destra per le conversazioni, utilizza il componente ConversationList -->
+		<div class="conversation-column">
+			<ConversationList
+				:conversations="conversations"
+				:conversationError="conversationError"
+				@conversationSelected="openConversation"
+			/>
+		</div>
+	</div>
+</template>
+
 <script>
+import UserList from "../components/UsersList.vue";
+import ConversationList from "../components/ConversationsList.vue";
+
 export default {
+	components: { UserList, ConversationList },
 	data() {
 		return {
 			users: [],
 			conversations: [],
-			searchUser: "",
-			searchConversation: "",
 			userError: "",
 			conversationError: "",
+			userId: null,
 		};
 	},
+	methods: {
+		async goToConversation(targetUserId) {
+			try {
+				console.log("debug");
+				// Controllo se esiste già una conversazione con questo utente
+				const response = await this.$axios.get(
+					`http://localhost:3000/privateChat/${targetUserId}`,
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
 
-	//Ogni volta che cambia il valore di this.users o this.searchUser il valore ricercato viene ricalcolato automaticamente (stessa cosa per conversation)
-	computed: {
-		filteredUsers() {
-			return this.users.filter((user) =>
-				user.username
-					.toLowerCase()
-					.includes(this.searchUser.toLowerCase())
-			);
-		},
-		filteredConversations() {
-			return this.conversations.filter((conversation) =>
-				conversation.name
-					.toLowerCase()
-					.includes(this.searchConversation.toLowerCase())
-			);
-		},
-	},
-
-	async created() {
-		const userId = sessionStorage.getItem("userId"); //Recupero lo userId dal session storage
-		if (!userId) {
-			console.error("UserId non trovato nel sessionStorage");
-			return;
-		}
-		try {
-			let usersResponse = await this.$axios.get(
-				"http://localhost:3000/users",
-				{
-					headers: {
-						Authorization: `Bearer ${userId}`,
-					},
+				// Se esiste, Navigo direttamente alla chat
+				console.log("debug2");
+				if (response.data && response.data.conversationId) {
+					this.$router.push(
+						`/conversation/id/${response.data.conversationId}`
+					);
+					return;
 				}
-			);
-			this.users = usersResponse.data; //Salvo i dati degli utenti
-		} catch (e) {
+			} catch (e) {
+				console.log("debug3");
+				// Se è Errore 404, allora la conversazione non esiste e la creo
+				if (e.response && e.response.status === 404) {
+					const message = prompt("Scrivi il primo messaggio");
+					if (!message || message.trim() === "") return;
+
+					let createConv = null;
+					try {
+						// Creo la nuova conversazione
+						createConv = await this.$axios.post(
+							"http://localhost:3000/conversations",
+							{
+								name: "",
+								photo: "",
+								members: [targetUserId],
+							},
+							{
+								headers: {
+									Authorization: `Bearer ${this.userId}`,
+								},
+							}
+						);
+					} catch (e) {
+						console.log("debug4");
+						this.handleError(e);
+					}
+					console.log("debug5");
+					const convId = createConv.data.conversationId;
+
+					//Invio il primo messaggio della conversazione
+					try {
+						console.log("debug6");
+						const firstmessage = await this.$axios.post(
+							`http://localhost:3000/conversations/${convId}/messages`,
+							{
+								content: "message",
+								type: "text",
+							},
+							{
+								headers: {
+									Authorization: `Bearer ${this.userId}`,
+								},
+							}
+						);
+					} catch (e) {
+						console.log("debug7");
+						this.handleError(e);
+					}
+
+					// Navigo alla nuova conversazione
+					this.$router.push(`/Conversations/id/${convId}`);
+				} else {
+					console.log("debug8");
+					this.handleError(e);
+				}
+			}
+		},
+
+		async openConversation(conversationId) {
+			// Navigo alla conversazione
+			this.$router.push(`/Conversations/id/${conversationId}`);
+		},
+
+		handleError(e) {
+			console.log("debug9");
 			if (e.response) {
-				// Il server ha risposto con un codice di stato
+				// Il server risponde con un codice di stato
 				switch (e.response.status) {
+					case 400:
+						this.userError = "Errore 400: Bad Request!";
+						break;
 					case 401:
 						this.userError = "Errore 401: Unauthorized!";
 						break;
+					case 403:
+						this.userError = "Errore 403: Forbidden!";
+						break;
 					case 500:
-						this.userError =
-							"Errore 500: Errore interno del server!";
+						this.userError = "Errore 500: Internal Server Error!";
 						break;
 					default:
 						this.userError = `Errore ${e.response.status}: ${
@@ -65,27 +146,45 @@ export default {
 			} else {
 				this.userError = "Si è verificato un errore!";
 			}
+		},
+	},
+
+	async created() {
+		this.userId = sessionStorage.getItem("userId"); //Recupero lo userId dal session storage
+		if (!this.userId) {
+			console.error("userId non trovato nel sessionStorage");
+			return;
+		}
+		try {
+			//Fetch degli utenti
+			let usersResponse = await this.$axios.get(
+				"http://localhost:3000/users",
+				{
+					headers: {
+						Authorization: `Bearer ${this.userId}`,
+					},
+				}
+			);
+			this.users = usersResponse.data; //Salvo i dati degli utenti
+		} catch (e) {
+			handleError(e);
 		}
 
 		try {
+			//Fetch delle conversazioni
 			let conversationsResponse = await this.$axios.get(
 				"http://localhost:3000/conversations",
 				{
 					headers: {
-						Authorization: `Bearer ${userId}`,
+						Authorization: `Bearer ${this.userId}`,
 					},
 				}
 			);
 			this.conversations = conversationsResponse.data; //Salvo i dati delle conversazioni
-			/*console.log("Utenti ricevuti:", this.users);
-			console.log("Conversazioni ricevute:", this.conversations);*/
 		} catch (e) {
 			if (e.response) {
-				// Il server ha risposto con un codice di stato
+				// Il server risponde con un codice di stato
 				switch (e.response.status) {
-					case 400:
-						this.conversationError = "Errore 400: Bad Request!";
-						break;
 					case 401:
 						this.conversationError = "Errore 401: Unauthorized!";
 						break;
@@ -109,83 +208,7 @@ export default {
 };
 </script>
 
-<template>
-	<div class="container">
-		<!-- Colonna sinistra per la Lista utenti -->
-		<div class="users-column">
-			<input
-				v-model="searchUser"
-				type="text"
-				placeholder="Search User..."
-				class="search-bar"
-			/>
-			<div v-if="userError" class="error-message">{{ userError }}</div>
-			<!--Se c'è uno userError lo mostro -->
-			<div class="user-list">
-				<div
-					v-for="user in filteredUsers"
-					:key="user.userId"
-					class="user-item"
-					@click="goToConversation(user.userId)"
-				>
-					<img
-						:src="user.photo || '/images/profile.png'"
-						alt="Avatar"
-						class="user-avatar"
-					/>
-					<span class="user-name">{{ user.username }}</span>
-				</div>
-			</div>
-		</div>
-
-		<!-- Colonna destra per la Lista conversazioni -->
-		<div class="conversation-column">
-			<input
-				v-model="searchConversation"
-				type="text"
-				placeholder="Search Conversation..."
-				class="search-bar"
-			/>
-			<div v-if="conversationError" class="error-message">
-				{{ conversationError }}
-			</div>
-			<!-- Se c'è un conversationError lo mostro -->
-			<div class="conversation-list">
-				<div
-					v-for="conversation in filteredConversations"
-					:key="conversation.conversationId"
-					class="conversation-item"
-				>
-					<img
-						:src="conversation.photo"
-						alt="Conversation Photo"
-						class="conversation-avatar"
-					/>
-					<div class="conversation-info">
-						<span class="conversation-name">{{
-							conversation.name
-						}}</span>
-						<span
-							v-if="conversation.type === 'group'"
-							class="conversation-sender"
-							>{{
-								conversation.lastMessage.SenderUsername
-							}}:</span
-						>
-						<span class="conversation-snippet">{{
-							conversation.lastMessage.Content
-						}}</span>
-					</div>
-					<span class="conversation-status">{{
-						conversation.status
-					}}</span>
-				</div>
-			</div>
-		</div>
-	</div>
-</template>
-
-<style scoped>
+<style scooped>
 .container {
 	display: flex;
 	width: 100vw;
@@ -218,69 +241,5 @@ export default {
 	border-radius: 10px;
 	overflow-y: auto;
 	border-left: 2px solid black;
-}
-
-.search-bar {
-	width: 100%;
-	padding: 8px;
-	padding-left: 0.8em;
-	outline: none;
-	overflow: hidden;
-	margin-bottom: 10px;
-	border: 2px solid transparent;
-	border-radius: 10px;
-	background-color: #f3f3f3;
-	transition: all 0.5s;
-}
-
-.search-bar:hover,
-.search-bar:focus {
-	border: 2px solid #4a9dec;
-	box-shadow: 0px 0px 0px 7px rgb(74, 157, 236, 20%);
-	background-color: white;
-}
-
-.user-list,
-.conversation-list {
-	max-height: 80vh;
-	overflow-y: auto;
-}
-
-.user-item,
-.conversation-item {
-	display: flex;
-	align-items: center;
-	padding: 10px;
-	border-bottom: 1px solid #ddd;
-}
-
-.user-avatar,
-.conversation-avatar {
-	width: 40px;
-	height: 40px;
-	border-radius: 50%;
-	margin-right: 10px;
-}
-
-.conversation-info {
-	flex-grow: 1;
-}
-
-.settings-icon {
-	position: absolute;
-	top: 10px;
-	right: 10px;
-	font-size: 24px;
-	cursor: pointer;
-}
-
-.error-message {
-	color: red;
-	font-weight: bold;
-	text-align: center;
-	margin-top: 10px;
-	background: #ffe0e0;
-	padding: 10px;
-	border-radius: 5px;
 }
 </style>

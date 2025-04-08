@@ -27,7 +27,7 @@ func (db *appdbimpl) GetMyConversations(userId int) ([]Conversation, error) {
 	var ConversationsList []Conversation
 	for rows.Next() {
 		var conversation Conversation
-		err = rows.Scan(&conversation.ConversationId, &conversation.Tipo, &conversation.Name, &conversation.Photo)
+		err = rows.Scan(&conversation.ConversationId, &conversation.Type, &conversation.Name, &conversation.Photo)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning rows: %w", err)
 		}
@@ -50,7 +50,7 @@ func (db *appdbimpl) GetMyConversations(userId int) ([]Conversation, error) {
 		conversation.LastMessage = lastMessage
 
 		//Se la conversazione è una chat singola, allora vado a cambiare il nome e la foto con quelle dell'altro utente
-		if conversation.Tipo == "chat" {
+		if conversation.Type == "chat" {
 			conversation.Name, conversation.Photo, err = db.GetOtherUserInformation(userId, conversation.ConversationId)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get other user information: %w", err)

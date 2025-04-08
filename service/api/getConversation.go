@@ -19,6 +19,20 @@ func (rt *_router) getConversation(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
+	//Controllo che lo userId sia associato ad un utente valido
+	valid, err := rt.db.DoesUserExist(userId)
+	if err != nil {
+		ctx.Logger.WithError(err).Error("Impossible to validate user")
+		http.Error(writer, "Impossible to validate user", http.StatusInternalServerError)
+		return
+	}
+
+	if !valid {
+		ctx.Logger.Error("userId is not valid")
+		http.Error(writer, "UserId is not valid", http.StatusUnauthorized)
+		return
+	}
+
 	//Estraggo il conversationId dai parametri della richiesta
 	conversationId, err := strconv.Atoi(params.ByName("conversationId"))
 	if err != nil {
@@ -68,5 +82,5 @@ func (rt *_router) getConversation(writer http.ResponseWriter, reader *http.Requ
 	}
 
 	//Scrivo il successo nel logger
-	ctx.Logger.Infof("GetConversation completed succesfull")
+	ctx.Logger.Infof("GetConversation completed successfully")
 }

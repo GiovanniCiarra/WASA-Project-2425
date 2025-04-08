@@ -46,7 +46,7 @@ type User struct {
 // Creo la struct di una conversation
 type Conversation struct {
 	ConversationId int     `json:"conversationId"`
-	Tipo           string  `json:"type"`
+	Type           string  `json:"type"`
 	Name           string  `json:"name"`
 	Photo          string  `json:"photo"`
 	LastMessage    Message `json:"lastMessage"`
@@ -107,6 +107,7 @@ type AppDatabase interface {
 	GetConversationMembers(conversationId int) ([]User, error)
 	UpdateMessageStatus(messageId int) error
 	DoesUserExist(userId int) (bool, error)
+	DoesConversationExists(userId, targetUserId int) (int, error)
 
 	Ping() error
 }

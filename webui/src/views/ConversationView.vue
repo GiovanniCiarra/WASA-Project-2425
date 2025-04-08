@@ -1,12 +1,61 @@
 <script>
+import ConversationList from "../components/ConversationsList.vue";
+import ConversationWindow from "../components/ConversationWindow.vue";
+
 export default {
+	components: { ConversationList, ConversationWindow },
+
 	data: function () {
 		return {
-			errormsg: null,
-			loading: false,
-			some_data: null,
+			conversations: [],
+			selectedConversation: null,
+			userId: null,
 		};
 	},
+
+	async created() {
+		this.userId = sessionStorage.getItem("userId"); //Recupero lo userId dal sessionStorage
+		if (!userId) {
+			console.log("userId non trovato nel sessionStorage");
+			return;
+		}
+
+		try {
+			//Fetch delle conversazioni
+			let conversationsResponse = await this.$axios.get(
+				"http://localhost:3000/conversations",
+				{
+					headers: {
+						Authorization: `Bearer ${this.userId}`,
+					},
+				}
+			);
+			this.conversations = conversationsResponse.data; //Salvo le conversazioni
+		} catch (e) {
+			if (e.response) {
+				// Il server risponde con un codice di stato
+				switch (e.response.status) {
+					case 401:
+						this.conversationError = "Errore 401: Unauthorized!";
+						break;
+					case 500:
+						this.conversationError =
+							"Errore 500: Errore interno del server!";
+						break;
+					default:
+						this.conversationError = `Errore ${
+							e.response.status
+						}: ${
+							e.response.data.message ||
+							"Si è verificato un errore!"
+						}`;
+				}
+			} else {
+				this.conversationError = "Si è verificato un errore!";
+			}
+		}
+	},
+
 	methods: {
 		async refresh() {
 			this.loading = true;
@@ -27,41 +76,12 @@ export default {
 </script>
 
 <template>
-	<div>
-		<div
-			class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
-		>
-			<h1 class="h2">Home page</h1>
-			<div class="btn-toolbar mb-2 mb-md-0">
-				<div class="btn-group me-2">
-					<button
-						type="button"
-						class="btn btn-sm btn-outline-secondary"
-						@click="refresh"
-					>
-						Refresh
-					</button>
-					<button
-						type="button"
-						class="btn btn-sm btn-outline-secondary"
-						@click="exportList"
-					>
-						Export
-					</button>
-				</div>
-				<div class="btn-group me-2">
-					<button
-						type="button"
-						class="btn btn-sm btn-outline-primary"
-						@click="newItem"
-					>
-						New
-					</button>
-				</div>
-			</div>
-		</div>
-
-		<ErrorMsg v-if="errormsg" :msg="errormsg"></ErrorMsg>
+	<div class="container">
+		<ConversationList
+			:conversations="conversations"
+			@conversationSelected="goToConversation"
+		/>
+		<ConversationWindow :conversation="selectedConversation" />
 	</div>
 </template>
 

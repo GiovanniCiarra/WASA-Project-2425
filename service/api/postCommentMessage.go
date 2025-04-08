@@ -20,6 +20,20 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
+	//Controllo che lo userId sia associato ad un utente valido
+	valid, err := rt.db.DoesUserExist(userId)
+	if err != nil {
+		ctx.Logger.WithError(err).Error("Impossible to validate user")
+		http.Error(writer, "Impossible to validate user", http.StatusInternalServerError)
+		return
+	}
+
+	if !valid {
+		ctx.Logger.Error("userId is not valid")
+		http.Error(writer, "UserId is not valid", http.StatusUnauthorized)
+		return
+	}
+
 	//Estraggo il messageId dai parametri della richiesta
 	messageId, err := strconv.Atoi(params.ByName("messageId"))
 	if err != nil {
