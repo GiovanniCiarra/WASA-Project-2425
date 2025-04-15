@@ -57,7 +57,8 @@ type Message struct {
 	ConversationId int       `json:"conversationId"`
 	Type           string    `json:"type"`
 	Content        string    `json:"content"`
-	SenderUsername int       `json:"sender"`
+	SenderId       int       `json:"senderId"`
+	SenderUsername string    `json:"senderUsername"`
 	Timestamp      string    `json:"timestamp"`
 	Status         string    `json:"status"`
 	Comments       []Comment `json:"comments,omitempty"`

@@ -5,7 +5,7 @@ import "fmt"
 func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message, error) {
 
 	//Recupero i messaggi della conversazione
-	rows, err := db.c.Query(`SELECT mt.messageId, mt.conversationId, mt.content, mt.timestamp, mt.type, mt.status, mt.isForwarded, u.name
+	rows, err := db.c.Query(`SELECT mt.messageId, mt.conversationId, mt.content, mt.senderId, mt.timestamp, mt.type, mt.status, mt.isForwarded, u.name
 													 FROM message_table mt 
 													 JOIN user_table u ON u.userId = mt.senderId 
 													 WHERE mt.conversationId = ?`, conversationId)
@@ -27,7 +27,7 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 	var messageList []Message
 	for rows.Next() {
 		var message Message
-		err = rows.Scan(&message.MessageId, &message.ConversationId, &message.Content,
+		err = rows.Scan(&message.MessageId, &message.ConversationId, &message.Content, &message.SenderId,
 			&message.Timestamp, &message.Type, &message.Status, &message.IsForwarded, &message.SenderUsername)
 
 		if err != nil {
@@ -35,7 +35,7 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 		}
 
 		//Creo per ogni messaggio il suo array di commenti
-		comments, err := db.c.Query(`SELECT ct.commentId, ct.messageId, ct.content, ct.timestamp, u.name
+		comments, err := db.c.Query(`SELECT ct.commentId, ct.messageId, ct.content, ct.timestamp, ut.name
 																	FROM comment_table ct 
 																	JOIN user_table ut ON ut.userId = ct.senderId
 																	WHERE ct.messageId = ?`, message.MessageId)

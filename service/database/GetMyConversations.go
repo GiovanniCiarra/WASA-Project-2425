@@ -1,6 +1,8 @@
 package database
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -34,17 +36,21 @@ func (db *appdbimpl) GetMyConversations(userId int) ([]Conversation, error) {
 
 		//Eseguo una query per ricevere le informazioni sull'ultimo messaggio della conversazione
 		var lastMessage Message
-		err = db.c.QueryRow(`SELECT mt.messageId, mt.conversationId, u.name, mt.content, mt.timestamp, mt.type, mt.status, mt.isForwarded 
+		err = db.c.QueryRow(`SELECT mt.messageId, mt.conversationId, mt.senderId, u.name, mt.content, mt.timestamp, mt.type, mt.status, mt.isForwarded 
 													FROM message_table mt
 													JOIN user_table u ON u.userId = mt.senderId
-													WHERE conversationId = ? 
-													ORDER BY timestamp DESC
+													WHERE mt.conversationId = ? 
+													ORDER BY mt.timestamp DESC
 													LIMIT 1`, conversation.ConversationId).
-			Scan(&lastMessage.MessageId, &lastMessage.ConversationId,
+			Scan(&lastMessage.MessageId, &lastMessage.ConversationId, &lastMessage.SenderId,
 				&lastMessage.SenderUsername, &lastMessage.Content, &lastMessage.Timestamp,
 				&lastMessage.Type, &lastMessage.Status, &lastMessage.IsForwarded)
 		if err != nil {
-			return nil, fmt.Errorf("error retreaving last message: %w", err)
+			if errors.Is(err, sql.ErrNoRows) {
+				lastMessage = Message{}
+			} else {
+				return nil, fmt.Errorf("error retreaving last message: %w", err)
+			}
 		}
 		lastMessage.Comments = nil //Non ho bisono dei commenti
 		conversation.LastMessage = lastMessage

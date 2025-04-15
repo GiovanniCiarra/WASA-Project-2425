@@ -13,8 +13,6 @@ import (
 
 func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	ctx.Logger.Infof("ciao")
-
 	//Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {

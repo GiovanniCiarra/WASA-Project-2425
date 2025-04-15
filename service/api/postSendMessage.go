@@ -2,6 +2,7 @@ package api
 
 import (
 	"Progetto/service/api/reqcontext"
+	"Progetto/service/database"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -98,25 +99,16 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 	}
 
 	//Creo la risposta
-	response := struct {
-		MessageId      int    `json:"id"`
-		ConversationId int    `json:"conversationId"`
-		Type           string `json:"type"`
-		Content        string `json:"content"`
-		Sender         string `json:"senderUsername"`
-		Timestamp      string `json:"timestamp"`
-		Status         string `json:"status"`
-		IsForwarded    bool   `json:"isForwarded"`
-	}{
-		MessageId:      messageId,
-		ConversationId: conversationId,
-		Type:           requestBody.Type,
-		Content:        requestBody.Content,
-		Sender:         username,
-		Timestamp:      time.Now().UTC().Format(time.RFC3339),
-		Status:         "sent",
-		IsForwarded:    true,
-	}
+	var response database.Message
+	response.MessageId = messageId
+	response.ConversationId = conversationId
+	response.Type = requestBody.Type
+	response.Content = requestBody.Content
+	response.SenderId = userId
+	response.SenderUsername = username
+	response.Status = "sent"
+	response.Timestamp = time.Now().UTC().Format(time.RFC3339)
+	response.IsForwarded = 0
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)

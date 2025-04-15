@@ -1,20 +1,20 @@
 import { createRouter, createWebHashHistory } from "vue-router";
-import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
+import HomeView from "../views/HomeView.vue";
+import NewChatView from "../views/NewChatView.vue";
 import ConversationView from "../views/ConversationView.vue";
-import ProfileView from "../views/ProfileView.vue";
 
 const router = createRouter({
 	history: createWebHashHistory(import.meta.env.BASE_URL),
 	routes: [
-		{ path: "/Login", component: LoginView },
-		{ path: "/Home", component: HomeView },
+		{ path: "/Login", name: "Login", component: LoginView },
+		{ path: "/Home", name: "Home", component: HomeView },
+		{ path: "/NewChat", name: "newChat", component: NewChatView },
 		{
-			path: "/Conversations/id/:conversationId",
+			path: "/Conversations/:conversationId",
+			name: "Conversation",
 			component: ConversationView,
 		},
-		{ path: "/Conversations/:userId", component: ConversationView },
-		{ path: "/Profile/:userId", component: ProfileView },
 		{ path: "/:pathMatch(.*)*", redirect: "/Login" },
 	],
 });

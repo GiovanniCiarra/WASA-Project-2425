@@ -1,26 +1,19 @@
 <template>
 	<div
 		class="conversation-item"
-		@click="$emit('select', conversation.conversationId)"
+		@click="$emit('conversationSelected', conversation.conversationId)"
 	>
 		<img
-			:src="conversation.photo"
-			alt="Conversation"
-			class="conversation-avatar"
+			:src="conversation.photo || '/images/default-user.png'"
+			alt="Foto"
+			class="conversation-photo"
 		/>
 		<div class="conversation-info">
-			<span class="conversation-name">{{ conversation.name }}</span>
-			<span
-				v-if="conversation.type === 'group'"
-				class="conversation-sender"
-			>
-				{{ conversation.lastMessage.SenderUsername }}:
-			</span>
-			<span class="conversation-snippet">{{
-				conversation.lastMessage.Content
-			}}</span>
+			<div class="conversation-name">{{ conversation.name }}</div>
+			<div class="conversation-snippet">
+				{{ conversation.lastMessage?.content || "Nessun messaggio" }}
+			</div>
 		</div>
-		<span class="conversation-status">{{ conversation.status }}</span>
 	</div>
 </template>
 
@@ -37,16 +30,29 @@ export default {
 	display: flex;
 	align-items: center;
 	padding: 10px;
-	border-bottom: 1px solid #ddd;
+	border-bottom: 1px solid #eee;
 	cursor: pointer;
 }
-.conversation-avatar {
+
+.conversation-photo {
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
 	margin-right: 10px;
+	object-fit: cover;
 }
+
 .conversation-info {
-	flex-grow: 1;
+	flex: 1;
+}
+
+.conversation-name {
+	font-weight: bold;
+}
+
+.conversation-snippet {
+	color: #666;
+	font-size: 0.9rem;
+	margin-top: 2px;
 }
 </style>
