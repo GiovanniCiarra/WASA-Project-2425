@@ -16,7 +16,7 @@ func (db *appdbimpl) GetMyConversations(userId int) ([]Conversation, error) {
 		return nil, fmt.Errorf("error in query execution: %w", err)
 	}
 
-	//rows verrà chiuso automaticamente alla fine della funzione
+	// rows verrà chiuso automaticamente alla fine della funzione
 	defer func() {
 		if errClose := rows.Close(); errClose != nil {
 			if err == nil {
@@ -25,7 +25,7 @@ func (db *appdbimpl) GetMyConversations(userId int) ([]Conversation, error) {
 		}
 	}()
 
-	//Creo la Lista delle chat da restituire
+	// Creo la Lista delle chat da restituire
 	var ConversationsList []Conversation
 	for rows.Next() {
 		var conversation Conversation
@@ -34,7 +34,7 @@ func (db *appdbimpl) GetMyConversations(userId int) ([]Conversation, error) {
 			return nil, fmt.Errorf("error scanning rows: %w", err)
 		}
 
-		//Eseguo una query per ricevere le informazioni sull'ultimo messaggio della conversazione
+		// Eseguo una query per ricevere le informazioni sull'ultimo messaggio della conversazione
 		var lastMessage Message
 		err = db.c.QueryRow(`SELECT mt.messageId, mt.conversationId, mt.senderId, u.name, mt.content, mt.timestamp, mt.type, mt.status, mt.isForwarded 
 													FROM message_table mt
@@ -52,10 +52,10 @@ func (db *appdbimpl) GetMyConversations(userId int) ([]Conversation, error) {
 				return nil, fmt.Errorf("error retreaving last message: %w", err)
 			}
 		}
-		lastMessage.Comments = nil //Non ho bisono dei commenti
+		lastMessage.Comments = nil // Non ho bisono dei commenti
 		conversation.LastMessage = lastMessage
 
-		//Se la conversazione è una chat singola, allora vado a cambiare il nome e la foto con quelle dell'altro utente
+		// Se la conversazione è una chat singola, allora vado a cambiare il nome e la foto con quelle dell'altro utente
 		if conversation.Type == "chat" {
 			conversation.Name, conversation.Photo, err = db.GetOtherUserInformation(userId, conversation.ConversationId)
 			if err != nil {

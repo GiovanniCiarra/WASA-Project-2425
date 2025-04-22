@@ -12,7 +12,7 @@ import (
 
 func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -20,7 +20,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -34,7 +34,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Decodifico al richiesta
+	// Decodifico al richiesta
 	var requestBody struct {
 		TargetChatId int `json:"targetChatId"`
 	}
@@ -45,7 +45,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Estraggo il messageId dai parametri della richiesta
+	// Estraggo il messageId dai parametri della richiesta
 	messageId, err := strconv.Atoi(params.ByName("messageId"))
 	if err != nil {
 		http.Error(writer, "Invalid messageId", http.StatusBadRequest)
@@ -53,7 +53,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Estraggo il contenuto del messaggio tramite il messageId
+	// Estraggo il contenuto del messaggio tramite il messageId
 	originalMessage, err := rt.db.GetMessageById(messageId)
 	if err != nil {
 		http.Error(writer, "Message not found or not accesible", http.StatusForbidden)
@@ -61,7 +61,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Verifico che l'utente faccia parte della conversazione originale
+	// Verifico che l'utente faccia parte della conversazione originale
 	conversationId := originalMessage.ConversationId
 	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
 	if err != nil {
@@ -75,7 +75,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Verifico che l'utente faccia parte della conversazione di destinazione
+	// Verifico che l'utente faccia parte della conversazione di destinazione
 	isMember, err = rt.db.IsUserInConversation(userId, requestBody.TargetChatId)
 	if err != nil {
 		http.Error(writer, "Database error while checking destination membership", http.StatusInternalServerError)
@@ -88,7 +88,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Copio il messaggio nella nuova conversazione
+	// Copio il messaggio nella nuova conversazione
 	newMessageId, err := rt.db.SaveMessage(requestBody.TargetChatId, userId, 1, originalMessage.Content, originalMessage.Type)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to forward message")
@@ -96,7 +96,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Prendo lo username dell'utente tramite lo userId
+	// Prendo lo username dell'utente tramite lo userId
 	username, _, err := rt.db.GetUserInformationById(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to get user information")
@@ -104,7 +104,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Creo la risposta
+	// Creo la risposta
 	response := struct {
 		MessageId      int    `json:"messageId"`
 		ConversationId int    `json:"conversationId"`
@@ -133,6 +133,6 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Scrivo il successo dell'operazione
+	// Scrivo il successo dell'operazione
 	ctx.Logger.Infof("Message %d forwarded to conversation %d successfully", messageId, conversationId)
 }

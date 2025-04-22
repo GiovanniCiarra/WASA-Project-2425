@@ -40,17 +40,6 @@ components:
       required: true
       description: unique identifier of a specific message
 
-    commentId:
-      schema:
-        description: integer that represent a comment
-        type: integer
-        example: 1
-        readOnly: true
-      name: commentId
-      in: path
-      required: true
-      description: unique identifier of a specific comment
-
   schemas:
     user:
       title: User
@@ -73,7 +62,7 @@ components:
           description: The user's photo
           type: string
           format: byte
-          example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD..."
+          example: "U3dhZ2dlciByb2Nrcw=="
           minLength: 0
           maxLength: 1000
 
@@ -107,7 +96,7 @@ components:
           description: The group's photo or other user's photo
           type: string
           format: byte
-          example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD..."
+          example: "U3dhZ2dlciByb2Nrcw=="
           minLength: 0
           maxLength: 1000
         lastMessage:
@@ -148,7 +137,7 @@ components:
             - description: a photo, body of the message
               type: string
               format: byte
-              example: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD..."
+              example: "U3dhZ2dlciByb2Nrcw=="
               minLength: 0
               maxLength: 1000
         senderId:
@@ -159,6 +148,7 @@ components:
         senderUsername:
           description: The username of the sender
           type: string
+          pattern: "^.*?$"
           example: "Giovanni"
           minLength: 3
           maxLength: 16
@@ -235,33 +225,6 @@ components:
           maxLength: 20
           readOnly: true
 
-    CreateConversationRequest:
-      title: Create conversation request
-      type: object
-      description: all the properties for the request
-      properties:
-        name:
-          type: string
-          description: The name of the group (only for groups)
-          example: "Team Project"
-          minLength: 3
-          maxLength: 16
-        photo:
-          description: The photo URL of the group (only for groups)
-          type: string
-          format: byte
-          example: "AgckycvkuyvVVUVYU75rr..."
-          minLength: 0
-          maxLength: 1000 #(1MB)
-        members:
-          description: List of userId for group creation or single for chat
-          type: array
-          items:
-            type: integer
-          example: [3, 4, 5]
-          minItems: 1
-          maxItems: 49
-
   securitySchemes:
     bearerAuth:
       type: http
@@ -300,6 +263,7 @@ paths:
         content:
           application/json:
             schema:
+              description: requestBody properties
               type: object
               properties:
                 name:
@@ -316,6 +280,7 @@ paths:
           content:
             application/json:
               schema:
+                description: userId
                 type: object
                 properties:
                   identifier:
@@ -325,6 +290,7 @@ paths:
           content:
             application/json:
               schema:
+                description: userId
                 type: object
                 properties:
                   identifier:
@@ -459,7 +425,31 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateConversationRequest"
+              type: object
+              description: all the properties for the request
+              properties:
+                name:
+                  type: string
+                  description: The name of the group (only for groups)
+                  pattern: "^.*?$"
+                  example: "Team Project"
+                  minLength: 3
+                  maxLength: 16
+                photo:
+                  description: The photo URL of the group (only for groups)
+                  type: string
+                  format: byte
+                  example: "U3dhZ2dlciByb2Nrcw=="
+                  minLength: 0
+                  maxLength: 1000 #(1MB)
+                members:
+                  description: List of userId for group creation or single for chat
+                  type: array
+                  items:
+                    type: integer
+                  example: [3, 4, 5]
+                  minItems: 1
+                  maxItems: 49
       responses:
         "201":
           description: Conversation created successfully
@@ -489,6 +479,7 @@ paths:
           content:
             application/json:
               schema:
+                description: conversationId
                 properties:
                   conversationId:
                     $ref: "#/components/schemas/conversation/properties/conversationId"
@@ -516,6 +507,7 @@ paths:
           content:
             application/json:
               schema:
+                description: message's array
                 type: array
                 items:
                   $ref: "#/components/schemas/message"
@@ -559,6 +551,8 @@ paths:
         content:
           application/json:
             schema:
+              description: the content and the type of the message
+              type: object
               properties:
                 content:
                   $ref: "#/components/schemas/message/properties/content"
@@ -715,6 +709,7 @@ paths:
           content:
             application/json:
               schema:
+                description: conversation member's array
                 type: array
                 items:
                   $ref: "#/components/schemas/user"

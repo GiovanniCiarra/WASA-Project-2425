@@ -6,14 +6,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	//"regexp"
-
 	"github.com/julienschmidt/httprouter"
 )
 
 func (rt *_router) putSetMyPhoto(writer http.ResponseWriter, reader *http.Request, _ httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -21,7 +19,7 @@ func (rt *_router) putSetMyPhoto(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -39,7 +37,7 @@ func (rt *_router) putSetMyPhoto(writer http.ResponseWriter, reader *http.Reques
 		Photo string `json:"photo"`
 	}{}
 
-	//Decodifica della richiesta
+	// Decodifica della richiesta
 	decoder := json.NewDecoder(reader.Body)
 	err = decoder.Decode(&requestBody)
 	if err != nil {
@@ -48,7 +46,7 @@ func (rt *_router) putSetMyPhoto(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//controllo la validità della nuova foto
+	// controllo la validità della nuova foto
 	_, err = base64.StdEncoding.DecodeString(requestBody.Photo)
 	if err != nil {
 		http.Error(writer, "Invalid Photo Format", http.StatusBadRequest)
@@ -56,14 +54,7 @@ func (rt *_router) putSetMyPhoto(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	/*regex := regexp.MustCompile(`^([A-Za-z0-9+/=]+)$`)
-	if !regex.MatchString(requestBody.Photo) {
-		http.Error(writer, "Invalid Photo Format", http.StatusBadRequest)
-		ctx.Logger.Error("Invalid Photo Format")
-		return
-	}*/
-
-	//Aggiorno la photo nel database
+	// Aggiorno la photo nel database
 	err = rt.db.UpdateUserPhoto(userId, requestBody.Photo)
 	if err != nil {
 		http.Error(writer, "Impossible to update photo", http.StatusInternalServerError)
@@ -71,7 +62,7 @@ func (rt *_router) putSetMyPhoto(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//Scrivo la risposta
+	// Scrivo la risposta
 	response := struct {
 		NewPhoto string `json:"photo"`
 	}{NewPhoto: requestBody.Photo}
@@ -87,7 +78,7 @@ func (rt *_router) putSetMyPhoto(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//Scrivo il successo del Login nel logger
+	// Scrivo il successo del Login nel logger
 	ctx.Logger.Infof("Photo Updated succesfully: %s", response.NewPhoto)
 
 }

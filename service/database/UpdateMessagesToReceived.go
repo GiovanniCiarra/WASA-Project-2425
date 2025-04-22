@@ -4,7 +4,7 @@ import "fmt"
 
 func (db *appdbimpl) UpdateMessagesToReceived(userId int) error {
 
-	//Seleziono tutti i messaggi che devono essere aggiornati
+	// Seleziono tutti i messaggi che devono essere aggiornati
 	rows, err := db.c.Query(`SELECT messageId FROM message_status_table
 														WHERE userId = ? AND status = 'sent'`, userId)
 
@@ -12,7 +12,7 @@ func (db *appdbimpl) UpdateMessagesToReceived(userId int) error {
 		return fmt.Errorf("error in query execution: %w", err)
 	}
 
-	//rows verrà chiuso automaticamente alla fine della funzione
+	// rows verrà chiuso automaticamente alla fine della funzione
 	defer func() {
 		if errClose := rows.Close(); errClose != nil {
 			if err == nil {
@@ -21,8 +21,8 @@ func (db *appdbimpl) UpdateMessagesToReceived(userId int) error {
 		}
 	}()
 
-	//Creo un array con tutti i messageId che sto aggiornando,a
-	//per poi controllare uno a uno se hanno tutti lo stesso stato per poter aggiornare lo stato generale del messaggio
+	// Creo un array con tutti i messageId che sto aggiornando,a
+	// per poi controllare uno a uno se hanno tutti lo stesso stato per poter aggiornare lo stato generale del messaggio
 	var messageIds []int
 	for rows.Next() {
 		var messageId int
@@ -32,7 +32,12 @@ func (db *appdbimpl) UpdateMessagesToReceived(userId int) error {
 		messageIds = append(messageIds, messageId)
 	}
 
-	//Aggiorno i messaggi a 'received' nella message_status_table per ogni messaggio
+	// Controllo se ci sono stati errori durante l'iterazione
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	// Aggiorno i messaggi a 'received' nella message_status_table per ogni messaggio
 	_, err = db.c.Exec(`UPDATE message_status_table 
 												SET status = 'received'
 												WHERE userId = ? AND status = 'sent'`, userId)
@@ -40,7 +45,7 @@ func (db *appdbimpl) UpdateMessagesToReceived(userId int) error {
 		return fmt.Errorf("error in query execution: %w", err)
 	}
 
-	//Controllo se devo aggiornare lo stato generale per ogni messaggio
+	// Controllo se devo aggiornare lo stato generale per ogni messaggio
 	for _, msgId := range messageIds {
 		err := db.UpdateMessageStatus(msgId)
 

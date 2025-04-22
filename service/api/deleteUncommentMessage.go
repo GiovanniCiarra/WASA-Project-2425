@@ -10,7 +10,7 @@ import (
 
 func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -18,7 +18,7 @@ func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -32,7 +32,7 @@ func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Estraggo il messageId dai parametri della richiesta
+	// Estraggo il messageId dai parametri della richiesta
 	messageId, err := strconv.Atoi(params.ByName("messageId"))
 	if err != nil {
 		http.Error(writer, "Invalid messageId", http.StatusBadRequest)
@@ -40,7 +40,7 @@ func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Controllo che il commento esista e sia dell'utente
+	// Controllo che il commento esista e sia dell'utente
 	hasCommented, err := rt.db.HasUserCommentedMessage(userId, messageId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Database error while checking comment existane")
@@ -54,7 +54,7 @@ func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Elimino il commento
+	// Elimino il commento
 	err = rt.db.DeleteComment(messageId, userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to delete comment")
@@ -62,7 +62,7 @@ func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Scrivo la risposta di successo
+	// Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
 	ctx.Logger.Infof("comment is deleted successfully from message %d", messageId)

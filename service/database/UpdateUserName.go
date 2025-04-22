@@ -8,5 +8,8 @@ func (db *appdbimpl) UpdateUserName(userId int, username string) error {
 												SET name = ? 
 												WHERE userId = ?`, username, userId)
 
-	return fmt.Errorf("error updating username: %w", err)
+	if err != nil {
+		return fmt.Errorf("error updating username: %w", err)
+	}
+	return nil
 }

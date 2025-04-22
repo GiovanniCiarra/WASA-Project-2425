@@ -1,8 +1,9 @@
 <template>
+	<MessageToast :message="toastMessage" />
 	<div class="background">
 		<div class="app-container">
 			<!-- Sidebar visibile ovunque tranne nella Login -->
-			<sidebar v-if="$route.name !== 'Login'" />
+			<Sidebar v-if="$route.name !== 'Login'" />
 
 			<!-- Spazio per tutte le view dinamiche -->
 			<main class="main-content">
@@ -12,9 +13,32 @@
 	</div>
 </template>
 
-<script setup>
+<script>
 import { RouterView } from "vue-router";
 import Sidebar from "../src/components/sidebar.vue";
+import MessageToast from "../src/components/messageToast.vue";
+
+export default {
+	components: {
+		Sidebar,
+		MessageToast,
+	},
+
+	data() {
+		return {
+			toastMessage: "",
+		};
+	},
+
+	methods: {
+		showToast(msg) {
+			this.toastMessage = "";
+			this.$nextTick(() => {
+				this.toastMessage = msg;
+			});
+		},
+	},
+};
 </script>
 
 <style>

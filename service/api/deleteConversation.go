@@ -10,7 +10,7 @@ import (
 
 func (rt *_router) deleteConversation(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -18,7 +18,7 @@ func (rt *_router) deleteConversation(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -32,7 +32,7 @@ func (rt *_router) deleteConversation(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Estraggo il conversationId dai parametri della richiesta
+	// Estraggo il conversationId dai parametri della richiesta
 	conversationId, err := strconv.Atoi(params.ByName("conversationId"))
 	if err != nil {
 		http.Error(writer, "Invalid conversationId", http.StatusBadRequest)
@@ -40,7 +40,7 @@ func (rt *_router) deleteConversation(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Elimino la conversazione
+	// Elimino la conversazione
 	err = rt.db.DeleteConversation(conversationId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to delete conversation")
@@ -48,7 +48,7 @@ func (rt *_router) deleteConversation(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Scrivo la risposta di successo
+	// Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
 	ctx.Logger.Infof("conversation %d is deleted successfully ", conversationId)

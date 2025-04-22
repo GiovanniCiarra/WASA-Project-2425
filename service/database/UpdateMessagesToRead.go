@@ -4,7 +4,7 @@ import "fmt"
 
 func (db *appdbimpl) UpdateMessagesToRead(userId, conversationId int) error {
 
-	//Seleziono i messaggi che devono essere aggiornati
+	// Seleziono i messaggi che devono essere aggiornati
 	rows, err := db.c.Query(`SELECT messageId 
 														FROM message_status_table
 														WHERE userId = ? AND status = 'received'
@@ -15,7 +15,7 @@ func (db *appdbimpl) UpdateMessagesToRead(userId, conversationId int) error {
 		return err
 	}
 
-	//rows verrà chiuso automaticamente alla fine della funzione
+	// rows verrà chiuso automaticamente alla fine della funzione
 	defer func() {
 		if errClose := rows.Close(); errClose != nil {
 			if err == nil {
@@ -24,8 +24,8 @@ func (db *appdbimpl) UpdateMessagesToRead(userId, conversationId int) error {
 		}
 	}()
 
-	//Creo un array con tutti i messageId che sto aggiornando,
-	//per poi controllare uno a uno se hanno tutti lo stesso stato per poter aggiornare lo stato generale
+	// Creo un array con tutti i messageId che sto aggiornando,
+	// per poi controllare uno a uno se hanno tutti lo stesso stato per poter aggiornare lo stato generale
 	var messageIds []int
 	for rows.Next() {
 		var messageId int
@@ -35,7 +35,7 @@ func (db *appdbimpl) UpdateMessagesToRead(userId, conversationId int) error {
 		messageIds = append(messageIds, messageId)
 	}
 
-	//Aggiorno i messaggi a 'read'nella message_status_table
+	// Aggiorno i messaggi a 'read'nella message_status_table
 	_, err = db.c.Exec(`UPDATE message_status_table
 											SET status = 'read'
 											WHERE userId = ? AND status = 'received'
@@ -46,7 +46,12 @@ func (db *appdbimpl) UpdateMessagesToRead(userId, conversationId int) error {
 		return fmt.Errorf("error updating message status to 'read': %w", err)
 	}
 
-	//Controllo se devo aggiornare lo stato generale
+	// Controllo se ci sono stati errori durante l'iterazione
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	// Controllo se devo aggiornare lo stato generale
 	for _, messageId := range messageIds {
 		err := db.UpdateMessageStatus(messageId)
 		if err != nil {

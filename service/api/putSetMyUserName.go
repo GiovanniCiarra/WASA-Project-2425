@@ -10,7 +10,7 @@ import (
 
 func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Request, _ httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -18,7 +18,7 @@ func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -36,7 +36,7 @@ func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Req
 		Username string `json:"username"`
 	}{}
 
-	//Decodifica della richiesta
+	// Decodifica della richiesta
 	decoder := json.NewDecoder(reader.Body)
 	err = decoder.Decode(&requestBody)
 	if err != nil {
@@ -45,7 +45,7 @@ func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Controllo la validità del nuovo username (compreso tra 3 e 16 caratteri e contenete caratteri alfanumerici(non solo spazi))
+	// Controllo la validità del nuovo username (compreso tra 3 e 16 caratteri e contenete caratteri alfanumerici(non solo spazi))
 	if !isValidName(requestBody.Username) {
 		ctx.Logger.WithError(err).Error("Invalid name")
 		http.Error(writer, "Invalid name", http.StatusBadRequest)
@@ -65,7 +65,7 @@ func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Aggiorno il nome utente nel database
+	// Aggiorno il nome utente nel database
 	err = rt.db.UpdateUserName(userId, requestBody.Username)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to update the UserName")
@@ -73,6 +73,7 @@ func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
+	// Creo la risposta
 	response := struct {
 		NewName string `json:"username"`
 	}{NewName: requestBody.Username}
@@ -88,7 +89,7 @@ func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Scrivo il successo del Login nel logger
+	// Scrivo il successo del Login nel logger
 	ctx.Logger.Infof("Username Updated succesfully: %s", response.NewName)
 
 }

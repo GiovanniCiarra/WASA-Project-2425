@@ -10,7 +10,7 @@ import (
 
 func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -18,7 +18,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -32,7 +32,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Estraggo il conversationId dai parametri della richiesta
+	// Estraggo il conversationId dai parametri della richiesta
 	conversationId, err := strconv.Atoi(params.ByName("conversationId"))
 	if err != nil {
 		http.Error(writer, "Invalid conversationId", http.StatusBadRequest)
@@ -40,7 +40,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Controllo se la conversazione è un gruppo
+	// Controllo se la conversazione è un gruppo
 	isGroup, err := rt.db.IsGroup(conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking conversation type", http.StatusInternalServerError)
@@ -54,7 +54,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Controllo che l'utente sia membro del gruppo
+	// Controllo che l'utente sia membro del gruppo
 	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking membership", http.StatusInternalServerError)
@@ -68,7 +68,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Rimuovo l'utente dal gruppo
+	// Rimuovo l'utente dal gruppo
 	err = rt.db.RemoveFromGroup(userId, conversationId)
 	if err != nil {
 		http.Error(writer, "Failed to remove user from group", http.StatusInternalServerError)
@@ -76,7 +76,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Controllo se il gruppo è rimasto senza membri
+	// Controllo se il gruppo è rimasto senza membri
 	hasMembers, err := rt.db.DoesGroupHaveMembers(conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking group members", http.StatusInternalServerError)
@@ -84,7 +84,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Se il gruppo è vuoto, lo elimino
+	// Se il gruppo è vuoto, lo elimino
 	if !hasMembers {
 		err = rt.db.DeleteConversation(conversationId)
 		if err != nil {
@@ -94,7 +94,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 		}
 	}
 
-	//Scrivo la risposta di successo
+	// Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
 	ctx.Logger.Infof("user %d leave successfully the group %d", userId, conversationId)

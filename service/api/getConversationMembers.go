@@ -11,7 +11,7 @@ import (
 
 func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -19,7 +19,7 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -33,7 +33,7 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Estraggo il conversationId dai parametri della richiesta
+	// Estraggo il conversationId dai parametri della richiesta
 	conversationId, err := strconv.Atoi(params.ByName("conversationId"))
 	if err != nil {
 		http.Error(writer, "Invalid conversationId", http.StatusBadRequest)
@@ -41,7 +41,7 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Controllo che l'utente faccia parte della conversazione
+	// Controllo che l'utente faccia parte della conversazione
 	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
 	if err != nil {
 		http.Error(writer, "error checking conversation membership", http.StatusBadRequest)
@@ -55,7 +55,7 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Richiamo la funzione del database per ottenere i membri della conversazione
+	// Richiamo la funzione del database per ottenere i membri della conversazione
 	members, err := rt.db.GetConversationMembers(conversationId)
 	if err != nil {
 		http.Error(writer, "Failed to retrieve conversation members", http.StatusInternalServerError)
@@ -63,7 +63,7 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Scrivo la Risposta
+	// Scrivo la Risposta
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
@@ -73,6 +73,6 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Scrivo il successo nel logger
+	// Scrivo il successo nel logger
 	ctx.Logger.Infof("GetConversationMembers completed succesfully")
 }

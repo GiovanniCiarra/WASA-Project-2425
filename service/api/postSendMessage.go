@@ -13,7 +13,7 @@ import (
 
 func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -21,7 +21,7 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -35,7 +35,7 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Estraggo il conversationId dai parametri della richiesta
+	// Estraggo il conversationId dai parametri della richiesta
 	conversationId, err := strconv.Atoi(params.ByName("conversationId"))
 	if err != nil {
 		http.Error(writer, "Invalid conversationId", http.StatusBadRequest)
@@ -43,7 +43,7 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Decodifico il corpo JSON della richiesta
+	// Decodifico il corpo JSON della richiesta
 	var requestBody struct {
 		Content string `json:"content"`
 		Type    string `json:"type"`
@@ -55,7 +55,7 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Controllo i dati del requestBody
+	// Controllo i dati del requestBody
 	if requestBody.Type != "text" && requestBody.Type != "photo" {
 		ctx.Logger.WithError(err).Error("Invalid message type")
 		http.Error(writer, "Invalid message type", http.StatusBadRequest)
@@ -68,7 +68,7 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Controllo che l'utente partecipi alla conversazione
+	// Controllo che l'utente partecipi alla conversazione
 	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Database error while checking membership")
@@ -82,7 +82,7 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Inserisco il messaggio nel database
+	// Inserisco il messaggio nel database
 	messageId, err := rt.db.SaveMessage(conversationId, userId, 0, requestBody.Content, requestBody.Type)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to save message")
@@ -90,7 +90,7 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Prendo lo username dell'utente tramite lo userId
+	// Prendo lo username dell'utente tramite lo userId
 	username, _, err := rt.db.GetUserInformationById(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to get user information")
@@ -98,7 +98,7 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Creo la risposta
+	// Creo la risposta
 	var response database.Message
 	response.MessageId = messageId
 	response.ConversationId = conversationId
@@ -118,6 +118,6 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Scrivo il successo nel Logger
+	// Scrivo il successo nel Logger
 	ctx.Logger.Infof("postSendMessage completed succesfully: %d", messageId)
 }

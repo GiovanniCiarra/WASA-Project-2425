@@ -68,6 +68,7 @@ type Message struct {
 type Comment struct {
 	CommentId int    `json:"commentId"`
 	MessageId int    `json:"messageId"`
+	SenderId  int    `json:"senderId"`
 	Sender    string `json:"sender"`
 	Content   string `json:"content"`
 	Timestamp string `json:"timestamp"`

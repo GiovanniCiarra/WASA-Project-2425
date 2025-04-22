@@ -17,7 +17,7 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 		Name string `json:"name"`
 	}{}
 
-	//Decodifica della richiesta
+	// Decodifica della richiesta
 	decoder := json.NewDecoder(reader.Body)
 	err := decoder.Decode(&requestBody)
 	if err != nil {
@@ -26,14 +26,14 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 		return
 	}
 
-	//Controllo la validità dello username (compreso tra 3 e 16 caratteri e contenete caratteri alfanumerici(non solo spazi))
+	// Controllo la validità dello username (compreso tra 3 e 16 caratteri e contenete caratteri alfanumerici(non solo spazi))
 	if !isValidName(requestBody.Name) {
 		ctx.Logger.WithError(err).Error("Invalid name")
 		http.Error(writer, "Invalid name", http.StatusBadRequest)
 		return
 	}
 
-	//Controllo se l'utente esiste per ricevere il suo identifier e restituirlo come risposta http
+	// Controllo se l'utente esiste per ricevere il suo identifier e restituirlo come risposta http
 	var userId int
 	httpStatusResult := http.StatusOK
 	userId, err = rt.db.GetUserIdByName(requestBody.Name)
@@ -53,7 +53,7 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 		}
 	}
 
-	//Scrivo la risposta, che sarà in formato JSON
+	// Scrivo la risposta, che sarà in formato JSON
 	response := struct {
 		Identifier int `json:"identifier"`
 	}{Identifier: userId}
@@ -70,7 +70,7 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 		return
 	}
 
-	//Scrivo il successo del Login nel logger
+	// Scrivo il successo del Login nel logger
 	ctx.Logger.Infof("Login Succesfull: %s", requestBody.Name)
 
 }

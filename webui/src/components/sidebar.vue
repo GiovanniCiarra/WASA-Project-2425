@@ -1,10 +1,23 @@
 <template>
 	<div class="sidebar">
-		<button @click="$router.push('/Home')">🏠</button>
-		<button @click="$router.push('/NewChat')">💬</button>
-		<button @click="$router.push('/NewGroup')">👥</button>
-		<button @click="refresh">🔄</button>
-		<button @click="logout">🚪</button>
+		<button @click="$router.push('/Home')">
+			<img src="../assets/icons/conversations.png" alt="Conversations" />
+		</button>
+		<button @click="$router.push('/NewChat')">
+			<img src="../assets/icons/chat.png" alt="NewChat" />
+		</button>
+		<button @click="$router.push('/NewGroup')">
+			<img src="../assets/icons/group.png" alt="NewGroup" />
+		</button>
+		<button @click="$router.push('/Profile')">
+			<img src="../assets/icons/profile.png" alt="Profile" />
+		</button>
+		<button @click="refresh">
+			<img src="../assets/icons/refresh.png" alt="Refresh" />
+		</button>
+		<button @click="logout">
+			<img src="../assets/icons/logout.png" alt="Logout" />
+		</button>
 	</div>
 </template>
 
@@ -39,5 +52,10 @@ button {
 	background: none;
 	border: none;
 	cursor: pointer;
+}
+
+button:hover {
+	opacity: 1;
+	transform: scale(1.1);
 }
 </style>

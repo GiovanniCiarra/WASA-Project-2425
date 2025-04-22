@@ -2,6 +2,7 @@ package api
 
 import (
 	"Progetto/service/api/reqcontext"
+	"Progetto/service/database"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -12,7 +13,7 @@ import (
 
 func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -20,7 +21,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -34,7 +35,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Estraggo il messageId dai parametri della richiesta
+	// Estraggo il messageId dai parametri della richiesta
 	messageId, err := strconv.Atoi(params.ByName("messageId"))
 	if err != nil {
 		http.Error(writer, "Invalid messageId", http.StatusBadRequest)
@@ -42,7 +43,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Decodifica JSON della richiesta
+	// Decodifica JSON della richiesta
 	var requestBody struct {
 		Content string `json:"content"`
 	}
@@ -59,7 +60,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Controllo se il messaggio esiste e se l'utente è nella conversazione
+	// Controllo se il messaggio esiste e se l'utente è nella conversazione
 	isMember, err := rt.db.IsUserInMessageConversation(userId, messageId)
 	if err != nil {
 		http.Error(writer, "Database error checking user membership", http.StatusInternalServerError)
@@ -72,7 +73,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Controllo che non ci siano altri commenti dello stesso utente per lo stesso messaggio
+	// Controllo che non ci siano altri commenti dello stesso utente per lo stesso messaggio
 	hasCommented, err := rt.db.HasUserCommentedMessage(userId, messageId)
 	if err != nil {
 		http.Error(writer, "Database error while cheking comment existance", http.StatusInternalServerError)
@@ -86,7 +87,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Salvo il nuovo commento nel database
+	// Salvo il nuovo commento nel database
 	commentId, err := rt.db.SaveComment(messageId, userId, requestBody.Content)
 	if err != nil {
 		http.Error(writer, "Failed to save comment", http.StatusInternalServerError)
@@ -94,7 +95,7 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Prendo lo username dell'utente tramite lo userId
+	// Prendo lo username dell'utente tramite lo userId
 	username, _, err := rt.db.GetUserInformationById(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to get user information")
@@ -102,20 +103,14 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Scrivo la risposta
-	response := struct {
-		CommentId int    `json:"commentId"`
-		MessageId int    `json:"messageId"`
-		Sender    string `json:"sender"`
-		Content   string `json:"content"`
-		Timestamp string `json:"timestamp"`
-	}{
-		CommentId: commentId,
-		MessageId: messageId,
-		Sender:    username,
-		Content:   requestBody.Content,
-		Timestamp: time.Now().UTC().Format(time.RFC3339),
-	}
+	// Scrivo la risposta
+	var response database.Comment
+	response.CommentId = commentId
+	response.MessageId = messageId
+	response.SenderId = userId
+	response.Sender = username
+	response.Content = requestBody.Content
+	response.Timestamp = time.Now().UTC().Format(time.RFC3339)
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
@@ -125,5 +120,6 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
+	// Scrivo il successo nel logger
 	ctx.Logger.Infof("comment %d is added successfully on message %d", commentId, messageId)
 }

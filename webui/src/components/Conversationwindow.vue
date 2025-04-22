@@ -11,12 +11,37 @@
 				@forward="handleForward"
 				@comment="handleComment"
 				@delete="handleDelete"
+				@clickComment="handleClickComment"
+			/>
+			<CommentPicker
+				v-if="activeMessageForComment"
+				:style="{
+					top: pickerPosition.top + 'px',
+					left: pickerPosition.left + 'px',
+				}"
+				@select-emoji="handleEmojiSelect"
+				@close-emoji="activeMessageForComment = null"
+			/>
+
+			<CommentPopUp
+				v-if="commentPopup"
+				:comments="commentPopup.comments"
+				:currentUser="this.userId"
+				@close="commentPopup = null"
+				@delete="handleDeleteComment"
 			/>
 
 			<div v-if="messages.length === 0" class="no-messages">
 				Nessun messaggio
 			</div>
 		</div>
+
+		<ConfirmDialog
+			v-if="confirmingMessage"
+			:message="'Vuoi davvero eliminare questo messaggio?'"
+			@confirm="confirmDelete"
+			@cancel="cancelDelete"
+		/>
 
 		<MessageInput
 			:conversationId="conversationId"
@@ -29,12 +54,18 @@
 import ConversationHeader from "../components/ConversationHeader.vue";
 import MessageInput from "../components/MessageInput.vue";
 import Message from "../components/Message.vue";
+import ConfirmDialog from "../components/ConfirmDialog.vue";
+import CommentPicker from "../components/CommentPicker.vue";
+import CommentPopUp from "../components/CommentPopUp.vue";
 
 export default {
 	components: {
 		ConversationHeader,
 		MessageInput,
 		Message,
+		ConfirmDialog,
+		CommentPicker,
+		CommentPopUp,
 	},
 
 	props: {
@@ -48,6 +79,10 @@ export default {
 		return {
 			messages: [],
 			userId: null,
+			confirmingMessage: null,
+			activeMessageForComment: null,
+			pickerPosition: { top: 0, left: 0 },
+			commentPopup: null,
 		};
 	},
 
@@ -115,6 +150,109 @@ export default {
 				}
 			});
 		},
+
+		handleDelete(message) {
+			this.confirmingMessage = message;
+		},
+
+		async confirmDelete() {
+			const message = this.confirmingMessage;
+			this.confirmingMessage = null;
+			try {
+				await this.$axios.delete(
+					`http://localhost:3000/conversations/${this.conversationId}/messages/${message.messageId}`,
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
+				// Rimuovo il messaggio nell'array corrente
+				this.messages = this.messages.filter(
+					(m) => m.messageId !== message.messageId
+				);
+
+				// Se il messaggio eliminato era l'ultimo della conversazione, torno alla Home
+				if (this.messages.length === 0) {
+					this.$router.push("/Home");
+					this.$root.showToast(
+						"Conversazione eliminata perchè vuota!"
+					);
+				}
+			} catch (err) {
+				console.error("Errore durante la cancellazione:", err);
+			}
+		},
+
+		async cancelDelete() {
+			this.confirmingMessage = null;
+		},
+
+		handleComment(message, event) {
+			this.activeMessageForComment = message.messageId;
+			const rect = event.target.getBoundingClientRect();
+			this.pickerPosition = {
+				top: rect.top + window.scrollY + 30,
+				left: rect.left + window.scrollX,
+			};
+		},
+
+		async handleEmojiSelect(emoji) {
+			const messageId = this.activeMessageForComment;
+			this.activeMessageForComment = null;
+
+			try {
+				const res = await this.$axios.post(
+					`http://localhost:3000/messages/${messageId}/comments`,
+					{ content: emoji },
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
+				// Aggiorno localmente il messaggio
+				const newComment = res.data;
+				const msg = this.messages.find(
+					(m) => m.messageId === messageId
+				);
+				if (msg) {
+					msg.comments = msg.comments || [];
+					msg.comments.push(newComment);
+				}
+			} catch (err) {
+				console.error("Errore nel salvataggio commento", err);
+			}
+		},
+
+		handleClickComment(comment) {
+			const message = this.messages.find(
+				(m) => m.messageId === comment.messageId
+			);
+
+			if (message) {
+				this.commentPopup = message;
+			}
+		},
+	},
+
+	async handleDeleteComment(comment) {
+		try {
+			await this.$axios.delete(
+				`http://localhost:3000/messages/${comment.messageId}/comments`,
+				{
+					headers: {
+						Authorization: `Bearer ${this.userId}`,
+					},
+				}
+			);
+			// aggiorno la lista locale
+			this.commentPopup.comments = this.commentPopup.comments.filter(
+				(c) => c.commentId !== comment.commentId
+			);
+		} catch (err) {
+			console.error("Errore nella cancellazione del commento", err);
+		}
 	},
 };
 </script>

@@ -11,7 +11,7 @@ import (
 
 func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -19,7 +19,7 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -33,7 +33,7 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Estraggo il conversationId dai parametri della richiesta
+	// Estraggo il conversationId dai parametri della richiesta
 	conversationId, err := strconv.Atoi(params.ByName("conversationId"))
 	if err != nil {
 		http.Error(writer, "Invalid conversationId", http.StatusBadRequest)
@@ -41,7 +41,7 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Controllo che la conversazione sia un gruppo
+	// Controllo che la conversazione sia un gruppo
 	isGroup, err := rt.db.IsGroup(conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking conversation type", http.StatusInternalServerError)
@@ -55,7 +55,7 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Controllo che l'utente sia un membro del gruppo
+	// Controllo che l'utente sia un membro del gruppo
 	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking membership", http.StatusInternalServerError)
@@ -69,7 +69,7 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Leggo l'immagine
+	// Leggo l'immagine
 	img, err := io.ReadAll(reader.Body)
 	if err != nil {
 		http.Error(writer, "Failed to read image", http.StatusBadRequest)
@@ -83,14 +83,14 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	//Salvo la nuova immagine del database
+	// Salvo la nuova immagine del database
 	err = rt.db.UpdateGroupPhoto(conversationId, img)
 	if err != nil {
 		http.Error(writer, "Failed to update group photo", http.StatusBadRequest)
 		ctx.Logger.WithError(err).Error("Failed to updat group photo")
 	}
 
-	//Scrivo la risposta di successo
+	// Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusOK)
 
 	ctx.Logger.Infof("group's photo is updated successfully")

@@ -7,5 +7,10 @@ func (db *appdbimpl) UpdateGroupPhoto(conversationId int, image []byte) error {
 		SET photo = ? 
 		WHERE id = ? AND type = 'group'`, image, conversationId)
 
-	return err
+	if err != nil {
+		return err
+
+	}
+
+	return nil
 }

@@ -11,7 +11,7 @@ import (
 
 func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -19,7 +19,7 @@ func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Reque
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -33,7 +33,7 @@ func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Reque
 		return
 	}
 
-	//Estraggo il conversationId dai parametri della richiesta
+	// Estraggo il conversationId dai parametri della richiesta
 	conversationId, err := strconv.Atoi(params.ByName("conversationId"))
 	if err != nil {
 		http.Error(writer, "Invalid conversationId", http.StatusBadRequest)
@@ -41,7 +41,7 @@ func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Reque
 		return
 	}
 
-	//Decodifico la richiesta JSON
+	// Decodifico la richiesta JSON
 	var requestBody struct {
 		NewUserId int `json:"userId"`
 	}
@@ -65,7 +65,7 @@ func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Reque
 		return
 	}
 
-	//Controllo che la conversazione sia un gruppo
+	// Controllo che la conversazione sia un gruppo
 	isGroup, err := rt.db.IsGroup(conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking conversation type", http.StatusInternalServerError)
@@ -79,7 +79,7 @@ func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Reque
 		return
 	}
 
-	//Controllo che l'utente chiamante si trovi nel gruppo
+	// Controllo che l'utente chiamante si trovi nel gruppo
 	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking membership", http.StatusInternalServerError)
@@ -93,7 +93,7 @@ func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Reque
 		return
 	}
 
-	//Controllo che l'utente da aggiungere non si trovi già nel gruppo
+	// Controllo che l'utente da aggiungere non si trovi già nel gruppo
 	isMember, err = rt.db.IsUserInConversation(requestBody.NewUserId, conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking new user membership", http.StatusInternalServerError)
@@ -107,7 +107,7 @@ func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Reque
 		return
 	}
 
-	//Aggiungo il nuovo utente al gruppo
+	// Aggiungo il nuovo utente al gruppo
 	err = rt.db.AddToGroup(requestBody.NewUserId, conversationId)
 	if err != nil {
 		http.Error(writer, "Failed to add user to group", http.StatusInternalServerError)
@@ -115,9 +115,9 @@ func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Reque
 		return
 	}
 
-	//Scrivo al risposta
+	// Scrivo al risposta
 	writer.WriteHeader(http.StatusNoContent)
 
-	//Scrivo il successo nel logger
+	// Scrivo il successo nel logger
 	ctx.Logger.Infof("user %d is added successfully to coversation %d", requestBody.NewUserId, conversationId)
 }

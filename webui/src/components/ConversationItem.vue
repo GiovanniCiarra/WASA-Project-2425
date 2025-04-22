@@ -54,5 +54,9 @@ export default {
 	color: #666;
 	font-size: 0.9rem;
 	margin-top: 2px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 180px;
 }
 </style>

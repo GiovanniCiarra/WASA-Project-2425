@@ -10,7 +10,7 @@ import (
 
 func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.Request, _ httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -18,7 +18,7 @@ func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -32,7 +32,7 @@ func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Richiamo la funzione del database per ottenere la lista delle chat
+	// Richiamo la funzione del database per ottenere la lista delle chat
 	ChatsList, err := rt.db.GetMyConversations(userId)
 
 	if err != nil {
@@ -41,7 +41,7 @@ func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Aggiorno lo stato dei messaggi a "received" per questo utente
+	// Aggiorno lo stato dei messaggi a "received" per questo utente
 	err = rt.db.UpdateMessagesToReceived(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to update message status")
@@ -49,7 +49,7 @@ func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Scrivo la Risposta
+	// Scrivo la Risposta
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
@@ -59,7 +59,7 @@ func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	//Scrivo il successo nel logger
+	// Scrivo il successo nel logger
 	ctx.Logger.Infof("GetMyConversations completed succesfully")
 
 }

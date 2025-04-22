@@ -10,7 +10,7 @@ import (
 
 func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *http.Request, _ httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -18,7 +18,7 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -32,7 +32,7 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Decodifico la richiesta JSON
+	// Decodifico la richiesta JSON
 	var requestBody struct {
 		Name    string `json:"name,omitempty"`
 		Photo   string `json:"photo,omitempty"`
@@ -45,7 +45,7 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Controllo se i memebri siano utenti validi
+	// Controllo se i memebri siano utenti validi
 	for _, member := range requestBody.Members {
 		ok, err := rt.db.DoesUserExist(member)
 		if err != nil {
@@ -61,7 +61,7 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 		}
 	}
 
-	//Analizzo la richiesta e creo la conversazione.
+	// Analizzo la richiesta e creo la conversazione.
 	conversationId, err := rt.db.CreateConversation(userId, requestBody.Name, requestBody.Photo, requestBody.Members)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to create conversation")
@@ -69,7 +69,7 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Scrivo la risposta, che sarà in formato JSON
+	// Scrivo la risposta, che sarà in formato JSON
 	response := struct {
 		ConversationId int `json:"conversationId"`
 	}{ConversationId: conversationId}
@@ -83,7 +83,7 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 		return
 	}
 
-	//Scrivo il successo nel logger
+	// Scrivo il successo nel logger
 	ctx.Logger.Infof("postCreateConversation completed succesfully: %d", conversationId)
 
 }

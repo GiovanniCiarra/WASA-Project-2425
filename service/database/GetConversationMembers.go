@@ -4,7 +4,7 @@ import "fmt"
 
 func (db *appdbimpl) GetConversationMembers(conversationId int) ([]User, error) {
 
-	//Eseguo la query per recuperare i membri della conversazione
+	// Eseguo la query per recuperare i membri della conversazione
 	rows, err := db.c.Query(`SELECT u.userId, u.name, u.photo
 													FROM user_table u
 													JOIN conversation_members_table cmt ON u.userId = cmt.userId
@@ -14,7 +14,7 @@ func (db *appdbimpl) GetConversationMembers(conversationId int) ([]User, error) 
 		return nil, fmt.Errorf("error in query execution: %w", err)
 	}
 
-	//rows verrà chiuso automaticamente alla fine della funzione
+	// rows verrà chiuso automaticamente alla fine della funzione
 	defer func() {
 		if errClose := rows.Close(); errClose != nil {
 			if err == nil {
@@ -23,7 +23,7 @@ func (db *appdbimpl) GetConversationMembers(conversationId int) ([]User, error) 
 		}
 	}()
 
-	//Costruisco l'array degli utenti da restituire
+	// Costruisco l'array degli utenti da restituire
 	var members []User
 	for rows.Next() {
 		var member User
@@ -32,6 +32,11 @@ func (db *appdbimpl) GetConversationMembers(conversationId int) ([]User, error) 
 		}
 
 		members = append(members, member)
+	}
+
+	// Controllo se ci sono stati errori durante l'iterazione
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return members, nil

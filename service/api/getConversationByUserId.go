@@ -13,7 +13,7 @@ import (
 
 func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -21,7 +21,7 @@ func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *h
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -35,7 +35,7 @@ func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *h
 		return
 	}
 
-	//Estraggo il targetUserId dai parametri della richiesta
+	// Estraggo il targetUserId dai parametri della richiesta
 	targetUserId, err := strconv.Atoi(params.ByName("userId"))
 	if err != nil {
 		http.Error(writer, "Invalid targetUserId", http.StatusBadRequest)
@@ -43,15 +43,14 @@ func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *h
 		return
 	}
 
-	//Controllo che lo userId e il targetUserId non siano lo stesso
+	// Controllo che lo userId e il targetUserId non siano lo stesso
 	if userId == targetUserId {
 		http.Error(writer, "targetUserId is equal to userId", http.StatusBadRequest)
 		ctx.Logger.Error("targetUserId is equal to userId")
 		return
 	}
 
-	//Controllo che il targetUserId sia associato ad un utente valido
-	valid = false
+	// Controllo che il targetUserId sia associato ad un utente valido
 	valid, err = rt.db.DoesUserExist(targetUserId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate target user")
@@ -65,7 +64,7 @@ func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *h
 		return
 	}
 
-	//Chiamo la funzione del database per controllare se esiste una conversazione privata tra userId e targetuserId
+	// Chiamo la funzione del database per controllare se esiste una conversazione privata tra userId e targetuserId
 	conversationId, err := rt.db.DoesConversationExists(userId, targetUserId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -78,12 +77,12 @@ func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *h
 		return
 	}
 
-	//Scrivo la risposta, che sarà in formato JSON
+	// Scrivo la risposta, che sarà in formato JSON
 	response := struct {
 		ConversationId int `json:"conversationId"`
 	}{ConversationId: conversationId}
 
-	//Scrivo la Risposta
+	// Scrivo la Risposta
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
@@ -93,6 +92,6 @@ func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *h
 		return
 	}
 
-	//Scrivo il successo nel logger
+	// Scrivo il successo nel logger
 	ctx.Logger.Infof("getConversationByUserId completed successfully")
 }

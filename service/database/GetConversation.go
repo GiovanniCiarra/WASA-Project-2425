@@ -4,7 +4,7 @@ import "fmt"
 
 func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message, error) {
 
-	//Recupero i messaggi della conversazione
+	// Recupero i messaggi della conversazione
 	rows, err := db.c.Query(`SELECT mt.messageId, mt.conversationId, mt.content, mt.senderId, mt.timestamp, mt.type, mt.status, mt.isForwarded, u.name
 													 FROM message_table mt 
 													 JOIN user_table u ON u.userId = mt.senderId 
@@ -14,7 +14,7 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 		return nil, fmt.Errorf("error in query execution: %w", err)
 	}
 
-	//rows verrà chiuso automaticamente alla fine della funzione
+	// rows verrà chiuso automaticamente alla fine della funzione
 	defer func() {
 		if errClose := rows.Close(); errClose != nil {
 			if err == nil {
@@ -23,7 +23,7 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 		}
 	}()
 
-	//Creo la Lista dei messaggi da restituire
+	// Creo la Lista dei messaggi da restituire
 	var messageList []Message
 	for rows.Next() {
 		var message Message
@@ -34,7 +34,12 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 			return nil, fmt.Errorf("error scanning rows: %w", err)
 		}
 
-		//Creo per ogni messaggio il suo array di commenti
+		// Controllo se ci sono stati errori durante l'iterazione
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+
+		// Creo per ogni messaggio il suo array di commenti
 		comments, err := db.c.Query(`SELECT ct.commentId, ct.messageId, ct.content, ct.timestamp, ut.name
 																	FROM comment_table ct 
 																	JOIN user_table ut ON ut.userId = ct.senderId
@@ -58,6 +63,11 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving messages: %w", err)
+	}
+
+	// Controllo se ci sono stati errori durante l'iterazione
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return messageList, nil

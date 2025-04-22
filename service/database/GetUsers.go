@@ -9,7 +9,7 @@ func (db *appdbimpl) GetUsers(userId int) ([]User, error) {
 		return nil, err
 	}
 
-	//rows verrà chiuso automaticamente alla fine della funzione
+	// rows verrà chiuso automaticamente alla fine della funzione
 	defer func() {
 		if errClose := rows.Close(); errClose != nil {
 			if err == nil {
@@ -18,7 +18,7 @@ func (db *appdbimpl) GetUsers(userId int) ([]User, error) {
 		}
 	}()
 
-	//Creo la UsersList da restituire, controllando di non restituire l'utente chiamante
+	// Creo la UsersList da restituire, controllando di non restituire l'utente chiamante
 	var UsersList []User
 	for rows.Next() {
 		var User User

@@ -10,7 +10,7 @@ import (
 
 func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
-	//Estraggo lo userId dall'Header
+	// Estraggo lo userId dall'Header
 	userId, err := extractUserID(reader, ctx)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve userId")
@@ -18,7 +18,7 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//Controllo che lo userId sia associato ad un utente valido
+	// Controllo che lo userId sia associato ad un utente valido
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
@@ -32,7 +32,7 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//Estraggo il conversationId e il messageId dai parametri della richiesta
+	// Estraggo il conversationId e il messageId dai parametri della richiesta
 	conversationId, err := strconv.Atoi(params.ByName("conversationId"))
 	if err != nil {
 		http.Error(writer, "Invalid conversationId", http.StatusBadRequest)
@@ -47,7 +47,7 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//Verifico che il messaggio appartenga all'utente e sia nella conversazione
+	// Verifico che il messaggio appartenga all'utente e sia nella conversazione
 	isOwner, err := rt.db.IsMessageOwner(userId, messageId, conversationId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Database error while checking message ownership")
@@ -61,7 +61,7 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//Elimino il messaggio dal database
+	// Elimino il messaggio dal database
 	err = rt.db.DeleteMessage(messageId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to delete message")
@@ -69,7 +69,7 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//Controllo se la conversazione ora è rimasta senza messaggi
+	// Controllo se la conversazione ora è rimasta senza messaggi
 	hasMessages, err := rt.db.DoesConversationHaveMessages(conversationId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Database error while checking conversation messages")
@@ -77,7 +77,7 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	//Se la conversazione è vuota, la elimino
+	// Se la conversazione è vuota, la elimino
 	if !hasMessages {
 		err = rt.db.DeleteConversation(conversationId)
 		if err != nil {
@@ -87,7 +87,7 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 		}
 	}
 
-	//Scrivo la risposta di successo
+	// Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
 	ctx.Logger.Infof("message %d is deleted successfully", messageId)
