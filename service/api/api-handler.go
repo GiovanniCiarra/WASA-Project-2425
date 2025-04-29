@@ -11,8 +11,9 @@ func (rt *_router) Handler() http.Handler {
 
 	rt.router.POST("/session", rt.wrap(rt.postDoLogin))
 	rt.router.GET("/users", rt.wrap(rt.getUsers))
-	rt.router.PUT("/users/me/username", rt.wrap(rt.putSetMyUserName))
-	rt.router.PUT("/users/me/photo", rt.wrap(rt.putSetMyPhoto))
+	rt.router.GET("/profile", rt.wrap(rt.getUserProfile))
+	rt.router.PUT("/profile/username", rt.wrap(rt.putSetMyUserName))
+	rt.router.PUT("/profile/photo", rt.wrap(rt.putSetMyPhoto))
 	rt.router.GET("/privateChat/:userId", rt.wrap(rt.getConversationByUserId))
 	rt.router.GET("/conversations", rt.wrap(rt.getMyConversations))
 	rt.router.POST("/conversations", rt.wrap(rt.postCreateConversation))

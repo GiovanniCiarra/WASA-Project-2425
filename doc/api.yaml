@@ -270,7 +270,7 @@ paths:
                   description: Username
                   type: string
                   example: Maria
-                  pattern: "^.*?$"
+                  pattern: "^(?=.*[a-zA-Z0-9])[a-zA-Z0-9 ]+$"
                   minLength: 3
                   maxLength: 16
         required: true
@@ -300,6 +300,25 @@ paths:
         "500":
           description: Internal Server Error
 
+  /profile:
+    get:
+      operationId: getUserProfile
+      tags: ["users"]
+      summary: "get user's profile informations"
+      description: |
+        Returns all the users informations
+      responses:
+        "200":
+          description: "userId, username, photo"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/user"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+
   /users:
     get:
       operationId: getUsers
@@ -324,7 +343,7 @@ paths:
         "500":
           description: Internal Server Error
 
-  /users/me/username:
+  /profile/username:
     put:
       operationId: setMyUserName
       tags: ["users"]
@@ -345,12 +364,8 @@ paths:
               required:
                 - username
       responses:
-        "200":
-          description: "User's username is updated successfully"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/user/properties/username"
+        "204":
+          description: "User's username is updated successfully (No Content)"
         "400":
           description: "bad Request"
         "401":
@@ -358,7 +373,7 @@ paths:
         "500":
           description: "Internal Server Error"
 
-  /users/me/photo:
+  /profile/photo:
     put:
       operationId: setMyPhoto
       tags: ["users"]
@@ -379,12 +394,8 @@ paths:
               required:
                 - photo
       responses:
-        "200":
-          description: "User's photo is updated successfully"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/user/properties/photo"
+        "204":
+          description: "User's photo is updated successfully (No Content)"
         "400":
           description: Bad Request
         "401":
@@ -456,7 +467,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/conversation/properties/conversationId"
+                description: conversationId
+                properties:
+                  conversationId:
+                    $ref: "#/components/schemas/conversation/properties/conversationId"
         "400":
           description: Bad Request
         "401":
@@ -801,8 +815,8 @@ paths:
               required:
                 - name
       responses:
-        "200":
-          description: group's name updated successfully
+        "204":
+          description: group's name updated successfully (No Content)
         "400":
           description: Bad Request
         "401":
@@ -835,8 +849,8 @@ paths:
               required:
                 - photo
       responses:
-        "200":
-          description: group's photo updated successfully
+        "204":
+          description: group's photo updated successfully (No Content)
         "400":
           description: Bad Request
         "401":

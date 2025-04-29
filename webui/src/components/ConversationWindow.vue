@@ -1,52 +1,90 @@
 <template>
 	<div class="conversation-window">
-		<ConversationHeader :name="name" :photo="photo" :type="type" />
-
-		<div class="message-area" ref="messageArea">
-			<Message
-				v-for="msg in messages"
-				:key="msg.messageId"
-				:message="msg"
-				:currentUser="this.userId"
-				@forward="handleForward"
-				@comment="handleComment"
-				@delete="handleDelete"
-				@clickComment="handleClickComment"
-			/>
-			<CommentPicker
-				v-if="activeMessageForComment"
-				:style="{
-					top: pickerPosition.top + 'px',
-					left: pickerPosition.left + 'px',
-				}"
-				@select-emoji="handleEmojiSelect"
-				@close-emoji="activeMessageForComment = null"
+		<div class="main-content">
+			<ConversationHeader
+				:name="name"
+				:photo="photo"
+				:type="type"
+				@openInfo="infoOpen = true"
 			/>
 
-			<CommentPopUp
-				v-if="commentPopup"
-				:comments="commentPopup.comments"
-				:currentUser="this.userId"
-				@close="commentPopup = null"
-				@delete="handleDeleteComment"
-			/>
+			<div v-if="infoOpen" class="info-overlay-container">
+				<!-- Se è un gruppo -->
+				<GroupInfoOverlay
+					v-if="type === 'group'"
+					:groupName="name"
+					:groupPhoto="photo"
+					:members="members"
+					:currentUser="userId"
+					@closeOverlay="infoOpen = false"
+					@leaveGroup="leaveGroup"
+					@addMembers="addMembers"
+					@updateGroupPhoto="updateGroupPhoto"
+					@updateGroupName="updateGroupName"
+				/>
 
-			<div v-if="messages.length === 0" class="no-messages">
-				Nessun messaggio
+				<!-- Se è una chat -->
+				<ChatInfoOverlay
+					v-else
+					:chatName="name"
+					:chatPhoto="photo"
+					@closeOverlay="infoOpen = false"
+				/>
 			</div>
+			<div class="message-area" ref="messageArea">
+				<Message
+					v-for="msg in messages"
+					:key="msg.messageId"
+					:message="msg"
+					:currentUser="this.userId"
+					@forward="handleForward"
+					@comment="handleComment"
+					@delete="handleDelete"
+					@clickComment="handleClickComment"
+				/>
+				<CommentPicker
+					v-if="activeMessageForComment"
+					:style="{
+						top: pickerPosition.top + 'px',
+						left: pickerPosition.left + 'px',
+					}"
+					@select-emoji="handleEmojiSelect"
+					@close-emoji="activeMessageForComment = null"
+				/>
+
+				<CommentPopUp
+					v-if="commentPopup"
+					:comments="commentPopup.comments"
+					:currentUser="this.userId"
+					@close="commentPopup = null"
+					@deleteComment="handleDeleteComment"
+				/>
+
+				<ForwardPopUp
+					v-if="forwardingMessage"
+					:message="forwardingMessage"
+					:userId="userId"
+					@cancel="forwardingMessage = null"
+					@forwarded="forwardingMessage = null"
+				/>
+
+				<div v-if="messages.length === 0" class="no-messages">
+					Nessun messaggio
+				</div>
+			</div>
+
+			<ConfirmDialog
+				v-if="confirmingMessage"
+				:message="'Vuoi davvero eliminare questo messaggio?'"
+				@confirm="confirmDelete"
+				@cancel="cancelDelete"
+			/>
+
+			<MessageInput
+				:conversationId="conversationId"
+				@messageSent="handleMessageSent"
+			/>
 		</div>
-
-		<ConfirmDialog
-			v-if="confirmingMessage"
-			:message="'Vuoi davvero eliminare questo messaggio?'"
-			@confirm="confirmDelete"
-			@cancel="cancelDelete"
-		/>
-
-		<MessageInput
-			:conversationId="conversationId"
-			@messageSent="handleMessageSent"
-		/>
 	</div>
 </template>
 
@@ -57,6 +95,9 @@ import Message from "../components/Message.vue";
 import ConfirmDialog from "../components/ConfirmDialog.vue";
 import CommentPicker from "../components/CommentPicker.vue";
 import CommentPopUp from "../components/CommentPopUp.vue";
+import ForwardPopUp from "../components/ForwardPopUp.vue";
+import GroupInfoOverlay from "../components/GroupInfoOverlay.vue";
+import ChatInfoOverlay from "../components/ChatInfoOverlay.vue";
 
 export default {
 	components: {
@@ -66,6 +107,9 @@ export default {
 		ConfirmDialog,
 		CommentPicker,
 		CommentPopUp,
+		ForwardPopUp,
+		GroupInfoOverlay,
+		ChatInfoOverlay,
 	},
 
 	props: {
@@ -79,10 +123,13 @@ export default {
 		return {
 			messages: [],
 			userId: null,
+			members: [],
+			infoOpen: false,
 			confirmingMessage: null,
 			activeMessageForComment: null,
 			pickerPosition: { top: 0, left: 0 },
 			commentPopup: null,
+			forwardingMessage: null,
 		};
 	},
 
@@ -101,12 +148,19 @@ export default {
 	created() {
 		this.userId = Number(sessionStorage.getItem("userId"));
 		this.fetchMessages();
+		if (this.type === "group") {
+			this.fetchMembers();
+		}
 	},
 
 	watch: {
 		"$route.params.conversationId"(newId, oldId) {
 			if (newId !== oldId) {
 				this.fetchMessages();
+				if (this.type === "group") {
+					this.fetchMembers();
+				}
+				this.infoOpen = false;
 			}
 		},
 	},
@@ -115,7 +169,7 @@ export default {
 		async fetchMessages() {
 			try {
 				const res = await this.$axios.get(
-					`http://localhost:3000/conversations/${this.conversationId}`,
+					`/conversations/${this.conversationId}`,
 					{
 						headers: {
 							Authorization: `Bearer ${this.userId}`,
@@ -129,6 +183,27 @@ export default {
 				}
 			} catch (err) {
 				console.error("Errore nel caricamento dei messaggi", err);
+			}
+		},
+
+		async fetchMembers() {
+			try {
+				const res = await this.$axios.get(
+					`/conversations/${this.conversationId}/members`,
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
+				if (res.data) {
+					this.members = res.data;
+				}
+			} catch (err) {
+				console.error(
+					"errore nel caricamento dei membri della conversazione",
+					err
+				);
 			}
 		},
 
@@ -160,7 +235,7 @@ export default {
 			this.confirmingMessage = null;
 			try {
 				await this.$axios.delete(
-					`http://localhost:3000/conversations/${this.conversationId}/messages/${message.messageId}`,
+					`/conversations/${this.conversationId}/messages/${message.messageId}`,
 					{
 						headers: {
 							Authorization: `Bearer ${this.userId}`,
@@ -190,11 +265,25 @@ export default {
 
 		handleComment(message, event) {
 			this.activeMessageForComment = message.messageId;
-			const rect = event.target.getBoundingClientRect();
-			this.pickerPosition = {
-				top: rect.top + window.scrollY + 30,
-				left: rect.left + window.scrollX,
-			};
+
+			this.$nextTick(() => {
+				const target = event.target;
+				const messageArea = this.$refs.messageArea;
+
+				if (target && messageArea) {
+					const areaRect = messageArea.getBoundingClientRect();
+					const targetRect = target.getBoundingClientRect();
+
+					this.pickerPosition = {
+						top: targetRect.bottom - areaRect.top + 70,
+						left:
+							targetRect.left -
+							areaRect.left +
+							targetRect.width / 2 -
+							100,
+					};
+				}
+			});
 		},
 
 		async handleEmojiSelect(emoji) {
@@ -203,7 +292,7 @@ export default {
 
 			try {
 				const res = await this.$axios.post(
-					`http://localhost:3000/messages/${messageId}/comments`,
+					`/messages/${messageId}/comments`,
 					{ content: emoji },
 					{
 						headers: {
@@ -234,25 +323,54 @@ export default {
 				this.commentPopup = message;
 			}
 		},
-	},
+		async handleDeleteComment(comment) {
+			try {
+				await this.$axios.delete(
+					`/messages/${comment.messageId}/comments`,
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
+				// aggiorno la lista locale
+				this.commentPopup.comments = this.commentPopup.comments.filter(
+					(c) => c.commentId !== comment.commentId
+				);
+			} catch (err) {
+				console.error("Errore nella cancellazione del commento", err);
+			}
+		},
 
-	async handleDeleteComment(comment) {
-		try {
-			await this.$axios.delete(
-				`http://localhost:3000/messages/${comment.messageId}/comments`,
-				{
-					headers: {
-						Authorization: `Bearer ${this.userId}`,
-					},
+		async handleForward(message) {
+			this.forwardingMessage = message;
+		},
+
+		async leaveGroup() {
+			try {
+				await this.$axios.delete(
+					`/conversations/${this.conversationId}/leave`,
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
+				// aggiorno la lista locale
+				this.members = this.members.filter(
+					(m) => m.userId !== this.userId
+				);
+				this.$router.push("/Home");
+				this.$root.showToast("hai abbandonato il gruppo!");
+				if (this.members.length === 0) {
+					this.$root.showToast("Gruppo eliminato perchè vuoto!");
 				}
-			);
-			// aggiorno la lista locale
-			this.commentPopup.comments = this.commentPopup.comments.filter(
-				(c) => c.commentId !== comment.commentId
-			);
-		} catch (err) {
-			console.error("Errore nella cancellazione del commento", err);
-		}
+			} catch (err) {
+				console.error("Errore nell'abbandono del gruppo", err);
+			}
+		},
+
+		async addMembers(memberId) {},
 	},
 };
 </script>
@@ -265,6 +383,15 @@ export default {
 	background-color: #f0f0f0;
 	width: 100%;
 	max-width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.main-content {
+	position: relative;
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
 	height: 100%;
 	overflow: hidden;
 }
@@ -285,5 +412,29 @@ export default {
 
 .no-messages {
 	color: #999;
+}
+
+.info-overlay-container {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: white;
+	z-index: 10;
+	display: flex;
+	flex-direction: column;
+	animation: slideDown 0.4s ease forwards;
+}
+
+@keyframes slideDown {
+	from {
+		transform: translateY(-20px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
 }
 </style>

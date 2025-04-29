@@ -62,23 +62,10 @@ func (rt *_router) putSetMyPhoto(writer http.ResponseWriter, reader *http.Reques
 		return
 	}
 
-	// Scrivo la risposta
-	response := struct {
-		NewPhoto string `json:"photo"`
-	}{NewPhoto: requestBody.Photo}
-
-	writer.Header().Set("content-type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	encoder := json.NewEncoder(writer)
-	err = encoder.Encode(response)
-	if err != nil {
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
-		ctx.Logger.WithError(err).Error("Failed to encode response")
-		return
-	}
+	// Scrivo la risposta di successo
+	writer.WriteHeader(http.StatusNoContent)
 
 	// Scrivo il successo del Login nel logger
-	ctx.Logger.Infof("Photo Updated succesfully: %s", response.NewPhoto)
+	ctx.Logger.Infof("Photo Updated succesfully")
 
 }

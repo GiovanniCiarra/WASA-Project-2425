@@ -1,7 +1,7 @@
 <template>
-	<div class="header-container" @click="handleClick">
+	<div class="header-container" @click="$emit('openInfo')">
 		<img
-			:src="photo || '/images/default-user.png'"
+			:src="photo || defaultConversationPhoto"
 			alt="Foto"
 			class="header-photo"
 		/>
@@ -10,32 +10,21 @@
 </template>
 
 <script>
+import defaultConversationPhoto from "../assets/images/default-user.png";
+
 export default {
 	props: {
-		name: {
-			type: String,
-			required: true,
-		},
-		photo: {
-			type: String,
-			default: "",
-		},
-		type: {
-			type: String,
-			required: true,
-		},
+		name: String,
+		photo: String,
+		type: String,
 	},
-	methods: {
-		handleClick() {
-			if (this.type === "group") {
-				this.$router.push(
-					`/groups/${this.$route.params.conversationId}/info`
-				);
-			} else {
-				// eventualmente niente o profilo utente
-				console.log("Conversazione privata - nessuna azione");
-			}
-		},
+
+	emits: ["openInfo"],
+
+	data() {
+		return {
+			defaultConversationPhoto,
+		};
 	},
 };
 </script>

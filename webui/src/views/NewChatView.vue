@@ -49,12 +49,9 @@ export default {
 			if (!this.userId) return this.$router.push("/Login");
 
 			try {
-				const res = await this.$axios.get(
-					"http://localhost:3000/users",
-					{
-						headers: { Authorization: `Bearer ${this.userId}` },
-					}
-				);
+				const res = await this.$axios.get("/users", {
+					headers: { Authorization: `Bearer ${this.userId}` },
+				});
 				this.users = res.data;
 			} catch (err) {
 				console.error("Errore nel recupero utenti", err);
@@ -65,7 +62,7 @@ export default {
 			try {
 				// Verifico se già esiste una conversazione con questo utente
 				const res = await this.$axios.get(
-					`http://localhost:3000/privateChat/${targetUser.userId}`,
+					`/privateChat/${targetUser.userId}`,
 					{
 						headers: { Authorization: `Bearer ${this.userId}` },
 					}
@@ -86,7 +83,7 @@ export default {
 					// Se la conversazione non esiste, ricevo un error 404, allora la creo
 					try {
 						const createRes = await this.$axios.post(
-							"http://localhost:3000/conversations",
+							"/conversations",
 							{
 								name: "",
 								photo: "",

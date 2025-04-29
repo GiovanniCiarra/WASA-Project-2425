@@ -3,7 +3,12 @@
 		<div class="comment-details">
 			<div class="comment-details-header">
 				<span>Commenti al messaggio</span>
-				<button @click="$emit('close')" class="close-btn">✖</button>
+				<img
+					@click="$emit('close')"
+					class="close-btn"
+					src="../assets/icons/close.png"
+					alt="Close"
+				/>
 			</div>
 
 			<div v-if="comments.length === 0" class="empty">
@@ -16,7 +21,7 @@
 					<button
 						v-if="Number(comment.senderId) === currentUser"
 						class="delete-btn"
-						@click="$emit('delete', comment)"
+						@click="$emit('deleteComment', comment)"
 					>
 						Elimina
 					</button>
@@ -102,5 +107,10 @@ li {
 	border: none;
 	font-size: 1.1rem;
 	cursor: pointer;
+	opacity: 0.6;
+}
+
+.close-btn:hover {
+	opacity: 1;
 }
 </style>

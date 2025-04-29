@@ -5,8 +5,9 @@ import "fmt"
 func (db *appdbimpl) GetMessageById(messageId int) (Message, error) {
 	var message Message
 
-	err := db.c.QueryRow(`SELECT content, type FROM message_table
+	err := db.c.QueryRow(`SELECT conversationId, content, type FROM message_table
 												WHERE messageId = ?`, messageId).Scan(
+		&message.ConversationId,
 		&message.Content,
 		&message.Type,
 	)

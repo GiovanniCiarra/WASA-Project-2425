@@ -91,7 +91,7 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 	}
 
 	// Scrivo la risposta di successo
-	writer.WriteHeader(http.StatusOK)
+	writer.WriteHeader(http.StatusNoContent)
 
 	ctx.Logger.Infof("group's photo is updated successfully")
 

@@ -38,8 +38,8 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 	httpStatusResult := http.StatusOK
 	userId, err = rt.db.GetUserIdByName(requestBody.Name)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) { //se l'utente non esiste, lo creo
-			userId, err = rt.db.CreateUser(requestBody.Name) //quando creo l'utente la funzione ritorna anche l'id
+		if errors.Is(err, sql.ErrNoRows) { // se l'utente non esiste, lo creo
+			userId, err = rt.db.CreateUser(requestBody.Name) // quando creo l'utente la funzione ritorna anche l'id
 			if err != nil {
 				ctx.Logger.WithError(err).Error("User creation failed")
 				http.Error(writer, "User Creation Failed", http.StatusInternalServerError)

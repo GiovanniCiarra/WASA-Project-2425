@@ -73,23 +73,10 @@ func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	// Creo la risposta
-	response := struct {
-		NewName string `json:"username"`
-	}{NewName: requestBody.Username}
-
-	writer.Header().Set("content-type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	encoder := json.NewEncoder(writer)
-	err = encoder.Encode(response)
-	if err != nil {
-		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
-		ctx.Logger.WithError(err).Error("Failed to encode response")
-		return
-	}
+	// Scrivo la risposta di successo
+	writer.WriteHeader(http.StatusNoContent)
 
 	// Scrivo il successo del Login nel logger
-	ctx.Logger.Infof("Username Updated succesfully: %s", response.NewName)
+	ctx.Logger.Infof("Username Updated succesfully: %s", requestBody.Username)
 
 }

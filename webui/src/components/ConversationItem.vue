@@ -4,7 +4,7 @@
 		@click="$emit('conversationSelected', conversation.conversationId)"
 	>
 		<img
-			:src="conversation.photo || '/images/default-user.png'"
+			:src="conversation.photo || defaultConversationPhoto"
 			alt="Foto"
 			class="conversation-photo"
 		/>
@@ -18,9 +18,17 @@
 </template>
 
 <script>
+import defaultConversationPhoto from "../assets/images/default-user.png";
+
 export default {
 	props: {
 		conversation: Object,
+	},
+
+	data() {
+		return {
+			defaultConversationPhoto,
+		};
 	},
 };
 </script>

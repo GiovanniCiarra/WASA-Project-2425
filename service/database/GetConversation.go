@@ -34,40 +34,40 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 			return nil, fmt.Errorf("error scanning rows: %w", err)
 		}
 
-		// Controllo se ci sono stati errori durante l'iterazione
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-
 		// Creo per ogni messaggio il suo array di commenti
-		comments, err := db.c.Query(`SELECT ct.commentId, ct.messageId, ct.content, ct.timestamp, ut.name
+		comments, err2 := db.c.Query(`SELECT ct.commentId, ct.messageId,ct.senderId, ct.content, ct.timestamp, ut.name
 																	FROM comment_table ct 
 																	JOIN user_table ut ON ut.userId = ct.senderId
 																	WHERE ct.messageId = ?`, message.MessageId)
-		if err != nil {
-			return nil, fmt.Errorf("error in query execution: %w", err)
+		if err2 != nil {
+			return nil, fmt.Errorf("error in query execution: %w", err2)
 		}
 
 		var commentsList []Comment
 		for comments.Next() {
 			var comment Comment
-			err = comments.Scan(&comment.CommentId, &comment.MessageId, &comment.Content, &comment.Timestamp, &comment.Sender)
-			if err != nil {
-				return nil, fmt.Errorf("error scanning rows: %w", err)
+			err2 = comments.Scan(&comment.CommentId, &comment.MessageId, &comment.SenderId, &comment.Content, &comment.Timestamp, &comment.Sender)
+			if err2 != nil {
+				return nil, fmt.Errorf("error scanning rows: %w", err2)
 			}
 			commentsList = append(commentsList, comment)
 		}
+		if err2 := comments.Close(); err2 != nil {
+			return nil, fmt.Errorf("error closing comments rows: %w", err2)
+		}
+
+		// Controllo se ci sono stati errori durante l'iterazione
+		if err := comments.Err(); err != nil {
+			return nil, err
+		}
+
 		message.Comments = commentsList
 		messageList = append(messageList, message)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving messages: %w", err)
-	}
-
 	// Controllo se ci sono stati errori durante l'iterazione
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving messages: %w", err)
 	}
 
 	return messageList, nil

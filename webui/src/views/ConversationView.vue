@@ -73,16 +73,12 @@ export default {
 		async fetchConversations() {
 			this.userId = sessionStorage.getItem("userId");
 			try {
-				const res = await this.$axios.get(
-					"http://localhost:3000/conversations",
-					{
-						headers: {
-							Authorization: `Bearer ${this.userId}`,
-						},
-					}
-				);
+				const res = await this.$axios.get("/conversations", {
+					headers: {
+						Authorization: `Bearer ${this.userId}`,
+					},
+				});
 				this.conversations = res.data;
-				console.log(this.conversations);
 			} catch (err) {
 				console.error("Errore nel caricamento conversazioni", err);
 			}
@@ -91,16 +87,12 @@ export default {
 
 	beforeRouteLeave(_, __, next) {
 		if (!this.messageSent) {
-			console.log("CIAONE");
 			try {
-				this.$axios.delete(
-					`http://localhost:3000/conversations/${this.conversationId}`,
-					{
-						headers: {
-							Authorization: `Bearer ${this.userId}`,
-						},
-					}
-				);
+				this.$axios.delete(`/conversations/${this.conversationId}`, {
+					headers: {
+						Authorization: `Bearer ${this.userId}`,
+					},
+				});
 				console.log("Conversazione eliminata perché vuota");
 				next();
 			} catch (err) {

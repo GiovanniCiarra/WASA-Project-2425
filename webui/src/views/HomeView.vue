@@ -44,7 +44,7 @@
 </template>
 
 <script>
-import ConversationItem from "@/components/ConversationItem.vue";
+import ConversationItem from "../components/ConversationItem.vue";
 
 export default {
 	components: { ConversationItem },
@@ -79,14 +79,11 @@ export default {
 			}
 
 			try {
-				const res = await this.$axios.get(
-					"http://localhost:3000/conversations",
-					{
-						headers: {
-							Authorization: `Bearer ${this.userId}`,
-						},
-					}
-				);
+				const res = await this.$axios.get("/conversations", {
+					headers: {
+						Authorization: `Bearer ${this.userId}`,
+					},
+				});
 				this.conversations = res.data;
 			} catch (err) {
 				console.log("Errore nel caricamento delle conversazioni!");

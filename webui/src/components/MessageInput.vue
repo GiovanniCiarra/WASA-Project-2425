@@ -3,7 +3,7 @@
 		<!-- Immagine -->
 		<label class="icon-button">
 			<input type="file" hidden @change="handleImageUpload" />
-			📎
+			<img src="../assets/icons/image.png" alt="Image" />
 		</label>
 
 		<!-- Campo messaggio -->
@@ -45,7 +45,7 @@ export default {
 
 			try {
 				const res = await this.$axios.post(
-					`http://localhost:3000/conversations/${this.conversationId}/messages`,
+					`/conversations/${this.conversationId}/messages`,
 					{
 						content: this.message.trim(),
 						type: "text",

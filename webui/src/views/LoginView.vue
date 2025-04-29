@@ -12,12 +12,9 @@ export default {
 			this.loading = true;
 			this.errormsg = null;
 			try {
-				let response = await this.$axios.post(
-					"http://localhost:3000/session",
-					{
-						name: this.username,
-					}
-				);
+				let response = await this.$axios.post("/session", {
+					name: this.username,
+				});
 				// Salvo lo userId in sessionStorage
 				sessionStorage.setItem("userId", response.data.identifier);
 

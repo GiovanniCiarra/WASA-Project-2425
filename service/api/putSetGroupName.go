@@ -95,8 +95,8 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	writer.WriteHeader(http.StatusOK)
+	// Scrivo la risposta di successoS
+	writer.WriteHeader(http.StatusNoContent)
 
-	// Scrivo la risposta di successo
 	ctx.Logger.Infof("group's name is updated succesfully: %s", requestBody.Name)
 }

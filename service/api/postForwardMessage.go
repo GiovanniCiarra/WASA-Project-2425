@@ -62,8 +62,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 	}
 
 	// Verifico che l'utente faccia parte della conversazione originale
-	conversationId := originalMessage.ConversationId
-	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
+	isMember, err := rt.db.IsUserInConversation(userId, originalMessage.ConversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking original conversation membership", http.StatusInternalServerError)
 		ctx.Logger.WithError(err).Error("Database error while checking original conversation membership")
@@ -116,7 +115,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		IsForwarded    bool   `json:"isForwarded"`
 	}{
 		MessageId:      newMessageId,
-		ConversationId: conversationId,
+		ConversationId: requestBody.TargetChatId,
 		Sender:         username,
 		Content:        originalMessage.Content,
 		Type:           originalMessage.Type,
@@ -134,5 +133,5 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 	}
 
 	// Scrivo il successo dell'operazione
-	ctx.Logger.Infof("Message %d forwarded to conversation %d successfully", messageId, conversationId)
+	ctx.Logger.Infof("Message %d forwarded to conversation %d successfully", messageId, requestBody.TargetChatId)
 }
