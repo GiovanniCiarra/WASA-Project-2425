@@ -1,5 +1,6 @@
 <template>
 	<div class="home-container">
+		<div class="page-title">Le tue Conversazioni</div>
 		<div class="conversation-panel">
 			<input
 				v-model="searchQuery"
@@ -13,7 +14,7 @@
 			</div>
 
 			<div
-				v-if="filteredConversations.length > 0"
+				v-if="filteredConversations && filteredConversations.length > 0"
 				class="conversation-list"
 			>
 				<ConversationItem
@@ -55,14 +56,39 @@ export default {
 			searchQuery: "",
 			conversationError: "",
 			userId: null,
+			pollingInterval: null,
 		};
+	},
+
+	mounted() {
+		this.userId = sessionStorage.getItem("userId");
+		this.fetchConversations();
+		// Avvio il polling per il fetch delle conversazioni
+		this.pollingInterval = setInterval(() => {
+			this.fetchConversations();
+		}, 5000);
+	},
+
+	beforeDestroy() {
+		this.clearPolling();
+	},
+
+	beforeRouteLeave(_, __, next) {
+		this.clearPolling();
+		next();
 	},
 
 	computed: {
 		filteredConversations() {
-			return this.conversations.filter((conv) =>
-				conv.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-			);
+			if (this.conversations) {
+				return this.conversations.filter(
+					(conv) =>
+						conv.name
+							.toLowerCase()
+							.includes(this.searchQuery.toLowerCase()) &&
+						conv.lastMessage.messageId !== 0
+				);
+			}
 		},
 	},
 
@@ -72,12 +98,10 @@ export default {
 		},
 
 		async fetchConversations() {
-			this.userId = sessionStorage.getItem("userId");
 			if (!this.userId) {
 				this.$router.push("/login");
 				return;
 			}
-
 			try {
 				const res = await this.$axios.get("/conversations", {
 					headers: {
@@ -89,9 +113,13 @@ export default {
 				console.log("Errore nel caricamento delle conversazioni!");
 			}
 		},
-	},
-	created() {
-		this.fetchConversations();
+
+		clearPolling() {
+			if (this.pollingInterval) {
+				clearInterval(this.pollingInterval);
+				this.pollingInterval = null;
+			}
+		},
 	},
 };
 </script>
@@ -100,20 +128,30 @@ export default {
 .home-container {
 	flex-grow: 1;
 	display: flex;
-	justify-content: center;
+	flex-direction: column;
 	align-items: center;
-	background-color: #d9dbd5;
+	background: radial-gradient(circle at top left, #73bfa1, #a1ded0, #cdeee1);
 	height: 100%;
-	padding: 20px;
+	padding: 30px 20px;
 	box-sizing: border-box;
 }
 
+.page-title {
+	font-size: 2.2rem;
+	font-weight: 700;
+	color: white;
+	margin-bottom: 20px;
+	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	font-family: "Poppins", sans-serif;
+	text-align: center;
+}
+
 .conversation-panel {
-	background-color: white;
+	background-color: rgb(249, 249, 249);
 	width: 100%;
 	max-width: 900px;
-	height: 85vh;
-	border-radius: 12px;
+	height: 75vh;
+	border-radius: 16px;
 	padding: 20px;
 	padding-top: 10px;
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -132,11 +170,13 @@ export default {
 	background-color: #f3f3f3;
 	border-radius: 10px;
 	transition: all 0.5s;
+	margin-bottom: 12px;
+	margin-top: 10px;
 }
 
 .search-bar:hover,
 .search-bar:focus {
-	border: 2px solid #4a9dec;
+	border: 2px solid #73bfa1;
 	box-shadow: 0px 0px 0px 7px rgb(74, 157, 236, 20%);
 	background-color: white;
 }

@@ -88,7 +88,7 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 	}
 
 	// Copio il messaggio nella nuova conversazione
-	newMessageId, err := rt.db.SaveMessage(requestBody.TargetChatId, userId, 1, originalMessage.Content, originalMessage.Type)
+	newMessageId, err := rt.db.SaveMessage(requestBody.TargetChatId, userId, 1, -1, originalMessage.Content, originalMessage.Type)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to forward message")
 		http.Error(writer, "Failed to forward message", http.StatusInternalServerError)

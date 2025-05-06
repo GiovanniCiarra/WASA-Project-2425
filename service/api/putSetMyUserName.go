@@ -61,7 +61,7 @@ func (rt *_router) putSetMyUserName(writer http.ResponseWriter, reader *http.Req
 	}
 	if check {
 		ctx.Logger.WithError(err).Error("The username already exists")
-		http.Error(writer, "The username already exists", http.StatusBadRequest)
+		http.Error(writer, "Lo Username selezionato è già esistente", http.StatusBadRequest)
 		return
 	}
 

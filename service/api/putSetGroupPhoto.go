@@ -2,9 +2,11 @@ package api
 
 import (
 	"Progetto/service/api/reqcontext"
-	"io"
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -69,25 +71,49 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	// Leggo l'immagine
-	img, err := io.ReadAll(reader.Body)
-	if err != nil {
-		http.Error(writer, "Failed to read image", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Failed to read image")
+	// Decodifico la richiesta
+	var requestBody struct {
+		Photo string `json:"photo"`
+	}
+
+	if err := json.NewDecoder(reader.Body).Decode(&requestBody); err != nil {
+		http.Error(writer, "Invalid JSON Format", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Invalid JSON Format")
 		return
 	}
 
-	if len(img) == 0 || len(img) > 1_000_000 {
-		http.Error(writer, "Invalid image size", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Invalid image size")
+	// Controllo che sia un'immagine base64
+	if !strings.HasPrefix(requestBody.Photo, "data:image/png") {
+		http.Error(writer, "Invalid image Format", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Invalid image Format")
+		return
+	}
+
+	parts := strings.SplitN(requestBody.Photo, ",", 2)
+	if len(parts) != 2 {
+		http.Error(writer, "invalid base64 format", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Invalid base64 Format")
+		return
+	}
+
+	data, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		http.Error(writer, "invalid base64 encoding", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Invalid base64 encoding")
+		return
+	}
+
+	if len(data) > 500*1024 {
+		http.Error(writer, "image too large", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Image too large")
 		return
 	}
 
 	// Salvo la nuova immagine del database
-	err = rt.db.UpdateGroupPhoto(conversationId, img)
+	err = rt.db.UpdateGroupPhoto(conversationId, requestBody.Photo)
 	if err != nil {
 		http.Error(writer, "Failed to update group photo", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Failed to updat group photo")
+		ctx.Logger.WithError(err).Error("Failed to update group photo")
 	}
 
 	// Scrivo la risposta di successo

@@ -1,11 +1,11 @@
 package database
 
-func (db *appdbimpl) UpdateGroupPhoto(conversationId int, image []byte) error {
+func (db *appdbimpl) UpdateGroupPhoto(conversationId int, image string) error {
 
 	_, err := db.c.Exec(`
 		UPDATE conversation_table 
 		SET photo = ? 
-		WHERE id = ? AND type = 'group'`, image, conversationId)
+		WHERE conversationId = ? AND type = 'group'`, image, conversationId)
 
 	if err != nil {
 		return err

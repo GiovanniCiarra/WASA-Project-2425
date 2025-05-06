@@ -2,14 +2,14 @@ package database
 
 import "fmt"
 
-func (db *appdbimpl) SaveMessage(conversationId, senderId, isForwarded int, content, msgType string) (int, error) {
+func (db *appdbimpl) SaveMessage(conversationId, senderId, isForwarded, replyTo int, content, msgType string) (int, error) {
 	var messageId int
 
 	// Eseguo la query per inserire il messaggio nel database
 	err := db.c.QueryRow(`INSERT INTO message_table 
-												(conversationId, senderId, content, type, timestamp, status, isForwarded)
-												VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'sent', ?) RETURNING messageId`,
-		conversationId, senderId, content, msgType, isForwarded).Scan(&messageId)
+												(conversationId, senderId, content, type, timestamp, status, isForwarded, replyTo)
+												VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'sent', ?, ?) RETURNING messageId`,
+		conversationId, senderId, content, msgType, isForwarded, replyTo).Scan(&messageId)
 
 	if err != nil {
 		return -1, fmt.Errorf("error in query execution: %w", err)

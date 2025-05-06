@@ -1,38 +1,64 @@
 <template>
 	<teleport to="body">
 		<transition name="slide-up-fade">
-			<div v-if="visible" class="app-toast">
+			<div v-if="visible" :class="['app-toast', typeClass]">
 				<div class="toast-content">
-					<img
-						class="toast-icon-inline"
-						src="../assets/icons/warning-yellow.png"
-						alt="icon"
-					/>
+					<img class="toast-icon-inline" :src="iconSrc" alt="icon" />
 					<div class="toast-text">{{ message }}</div>
 				</div>
-				<div class="accent-bar"></div>
+				<div class="accent-bar" :class="accentClass"></div>
 			</div>
 		</transition>
 	</teleport>
 </template>
 
 <script>
+import successIcon from "../assets/icons/success-green.png";
+import warningIcon from "../assets/icons/warning-yellow.png";
+import errorIcon from "../assets/icons/error-red.png";
+
 export default {
 	props: {
 		message: String,
+		type: {
+			type: String,
+			default: "success", // [success, warning, error]
+		},
 	},
+
 	data() {
 		return {
 			visible: false,
 		};
 	},
+
 	watch: {
 		message(newVal) {
 			if (newVal) {
 				this.visible = true;
 				setTimeout(() => {
 					this.visible = false;
-				}, 5000);
+				}, 3000);
+			}
+		},
+	},
+
+	computed: {
+		typeClass() {
+			return `toast-${this.type}`;
+		},
+		accentClass() {
+			return `accent-${this.type}`;
+		},
+		iconSrc() {
+			switch (this.type) {
+				case "error":
+					return errorIcon;
+				case "warning":
+					return warningIcon;
+				case "success":
+				default:
+					return successIcon;
 			}
 		},
 	},
@@ -59,6 +85,16 @@ export default {
 	flex-direction: column;
 }
 
+.toast-success {
+	border-left: 4px solid #2fa27a;
+}
+.toast-warning {
+	border-left: 4px solid #fbc02d;
+}
+.toast-error {
+	border-left: 4px solid #e53935;
+}
+
 .toast-content {
 	display: flex;
 	flex-direction: row;
@@ -81,14 +117,21 @@ export default {
 	line-height: 1.4;
 }
 
-/* Riga decorativa */
 .accent-bar {
 	height: 4px;
 	width: 100%;
-	background-color: #2fa27a;
 	margin-top: 10px;
 	border-bottom-left-radius: 8px;
 	border-bottom-right-radius: 8px;
+}
+.accent-success {
+	background-color: #2fa27a;
+}
+.accent-warning {
+	background-color: #fbc02d;
+}
+.accent-error {
+	background-color: #e53935;
 }
 
 /* Animazione */

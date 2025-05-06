@@ -1,5 +1,5 @@
 <template>
-	<MessageToast :message="toastMessage" />
+	<MessageToast :message="toastMessage" :type="toastType" />
 	<div class="background">
 		<div class="app-container">
 			<!-- Sidebar visibile ovunque tranne nella Login -->
@@ -14,7 +14,6 @@
 </template>
 
 <script>
-import { RouterView } from "vue-router";
 import Sidebar from "../src/components/sidebar.vue";
 import MessageToast from "../src/components/messageToast.vue";
 
@@ -27,14 +26,16 @@ export default {
 	data() {
 		return {
 			toastMessage: "",
+			toastType: "success",
 		};
 	},
 
 	methods: {
-		showToast(msg) {
+		showToast(msg, type) {
 			this.toastMessage = "";
 			this.$nextTick(() => {
 				this.toastMessage = msg;
+				this.toastType = type;
 			});
 		},
 	},
@@ -43,7 +44,17 @@ export default {
 
 <style>
 .background {
-	background: repeating-linear-gradient(
+	background-image: url("../src/assets/images/sfondo.jpg");
+	background-size: cover; /* Ritaglia e adatta l’immagine al contenitore */
+	background-position: center; /* Centra l’immagine */
+	background-repeat: no-repeat; /* Non ripete l’immagine */
+	width: 100%;
+	height: 100vh; /* altezza 100% viewport */
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	overflow: hidden;
+	/*background: repeating-linear-gradient(
 		45deg,
 		#008080,
 		#008080 10px,
@@ -54,7 +65,7 @@ export default {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	overflow: hidden;
+	overflow: hidden;*/
 }
 
 .app-container {

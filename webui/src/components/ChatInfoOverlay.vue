@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import defaultUserPhoto from "../assets/images/default-user.png";
+import defaultUserPhoto from "../assets/images/default-user-100.png";
 
 export default {
 	props: {

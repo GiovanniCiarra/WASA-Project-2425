@@ -2,21 +2,21 @@
 	<div class="conversation-window">
 		<div class="main-content">
 			<ConversationHeader
-				:name="name"
-				:photo="photo"
-				:type="type"
-				@openInfo="infoOpen = true"
+				:name="conversationName"
+				:photo="conversationPhoto"
+				:type="conversationType"
+				@openInfo="$emit('openCloseConversationInfo')"
 			/>
 
-			<div v-if="infoOpen" class="info-overlay-container">
+			<div v-if="conversationInfoOpen" class="info-overlay-container">
 				<!-- Se è un gruppo -->
 				<GroupInfoOverlay
-					v-if="type === 'group'"
-					:groupName="name"
-					:groupPhoto="photo"
+					v-if="conversationType === 'group'"
+					:groupName="conversationName"
+					:groupPhoto="conversationPhoto"
 					:members="members"
 					:currentUser="userId"
-					@closeOverlay="infoOpen = false"
+					@closeOverlay="$emit('openCloseConversationInfo')"
 					@leaveGroup="leaveGroup"
 					@addMembers="addMembers"
 					@updateGroupPhoto="updateGroupPhoto"
@@ -26,9 +26,9 @@
 				<!-- Se è una chat -->
 				<ChatInfoOverlay
 					v-else
-					:chatName="name"
-					:chatPhoto="photo"
-					@closeOverlay="infoOpen = false"
+					:chatName="conversationName"
+					:chatPhoto="conversationPhoto"
+					@closeOverlay="$emit('openCloseConversationInfo')"
 				/>
 			</div>
 			<div class="message-area" ref="messageArea">
@@ -38,9 +38,10 @@
 					:message="msg"
 					:currentUser="this.userId"
 					@forward="handleForward"
-					@comment="handleComment"
-					@delete="handleDelete"
-					@clickComment="handleClickComment"
+					@reply="handleReply"
+					@comment="openCommentPicker"
+					@delete="handleDeleteMessage"
+					@clickComment="openCommentPopup"
 				/>
 				<CommentPicker
 					v-if="activeMessageForComment"
@@ -48,15 +49,15 @@
 						top: pickerPosition.top + 'px',
 						left: pickerPosition.left + 'px',
 					}"
-					@select-emoji="handleEmojiSelect"
+					@select-emoji="addComment"
 					@close-emoji="activeMessageForComment = null"
 				/>
 
 				<CommentPopUp
-					v-if="commentPopup"
-					:comments="commentPopup.comments"
+					v-if="commentPopupMessage"
+					:comments="commentPopupMessage.comments"
 					:currentUser="this.userId"
-					@close="commentPopup = null"
+					@close="closeCommentPopup"
 					@deleteComment="handleDeleteComment"
 				/>
 
@@ -76,13 +77,15 @@
 			<ConfirmDialog
 				v-if="confirmingMessage"
 				:message="'Vuoi davvero eliminare questo messaggio?'"
-				@confirm="confirmDelete"
-				@cancel="cancelDelete"
+				@confirm="confirmDeleteMessage"
+				@cancel="cancelDeleteMessage"
 			/>
 
 			<MessageInput
 				:conversationId="conversationId"
+				:replyingTo="replyingToMessage"
 				@messageSent="handleMessageSent"
+				@cancelReply="clearReply"
 			/>
 		</div>
 	</div>
@@ -117,104 +120,33 @@ export default {
 			type: [String, Number],
 			required: true,
 		},
+		messages: Array,
+		members: Array,
+		conversationName: String,
+		conversationPhoto: String,
+		conversationType: String,
+		commentPopupMessage: Object,
+		conversationInfoOpen: Boolean,
 	},
 
 	data() {
 		return {
-			messages: [],
 			userId: null,
-			members: [],
-			infoOpen: false,
 			confirmingMessage: null,
 			activeMessageForComment: null,
 			pickerPosition: { top: 0, left: 0 },
-			commentPopup: null,
 			forwardingMessage: null,
+			replyingToMessage: null,
 		};
-	},
-
-	computed: {
-		name() {
-			return this.$route.query.name;
-		},
-		photo() {
-			return this.$route.query.photo;
-		},
-		type() {
-			return this.$route.query.type;
-		},
 	},
 
 	created() {
 		this.userId = Number(sessionStorage.getItem("userId"));
-		this.fetchMessages();
-		if (this.type === "group") {
-			this.fetchMembers();
-		}
-	},
-
-	watch: {
-		"$route.params.conversationId"(newId, oldId) {
-			if (newId !== oldId) {
-				this.fetchMessages();
-				if (this.type === "group") {
-					this.fetchMembers();
-				}
-				this.infoOpen = false;
-			}
-		},
 	},
 
 	methods: {
-		async fetchMessages() {
-			try {
-				const res = await this.$axios.get(
-					`/conversations/${this.conversationId}`,
-					{
-						headers: {
-							Authorization: `Bearer ${this.userId}`,
-						},
-					}
-				);
-				if (res.data) {
-					this.messages = res.data;
-					this.$emit("messageSent");
-					this.scrollToBottom();
-				}
-			} catch (err) {
-				console.error("Errore nel caricamento dei messaggi", err);
-			}
-		},
-
-		async fetchMembers() {
-			try {
-				const res = await this.$axios.get(
-					`/conversations/${this.conversationId}/members`,
-					{
-						headers: {
-							Authorization: `Bearer ${this.userId}`,
-						},
-					}
-				);
-				if (res.data) {
-					this.members = res.data;
-				}
-			} catch (err) {
-				console.error(
-					"errore nel caricamento dei membri della conversazione",
-					err
-				);
-			}
-		},
-
-		addMessage(newMessage) {
-			this.messages.push(newMessage);
-			this.scrollToBottom();
-		},
-
 		handleMessageSent(message) {
-			this.addMessage(message);
-			this.$emit("messageSent");
+			this.$emit("updateMessages", message, "add");
 		},
 
 		scrollToBottom() {
@@ -226,11 +158,14 @@ export default {
 			});
 		},
 
-		handleDelete(message) {
+		/* -------------- GESTIONE AZIONI -------------- */
+
+		/* --- Delete Message --- */
+		handleDeleteMessage(message) {
 			this.confirmingMessage = message;
 		},
 
-		async confirmDelete() {
+		async confirmDeleteMessage() {
 			const message = this.confirmingMessage;
 			this.confirmingMessage = null;
 			try {
@@ -242,28 +177,18 @@ export default {
 						},
 					}
 				);
-				// Rimuovo il messaggio nell'array corrente
-				this.messages = this.messages.filter(
-					(m) => m.messageId !== message.messageId
-				);
-
-				// Se il messaggio eliminato era l'ultimo della conversazione, torno alla Home
-				if (this.messages.length === 0) {
-					this.$router.push("/Home");
-					this.$root.showToast(
-						"Conversazione eliminata perchè vuota!"
-					);
-				}
+				this.$emit("updateMessages", message, "delete");
 			} catch (err) {
 				console.error("Errore durante la cancellazione:", err);
 			}
 		},
 
-		async cancelDelete() {
+		async cancelDeleteMessage() {
 			this.confirmingMessage = null;
 		},
 
-		handleComment(message, event) {
+		/* --- Comment Message --- */
+		openCommentPicker(message, event) {
 			this.activeMessageForComment = message.messageId;
 
 			this.$nextTick(() => {
@@ -286,7 +211,7 @@ export default {
 			});
 		},
 
-		async handleEmojiSelect(emoji) {
+		async addComment(emoji) {
 			const messageId = this.activeMessageForComment;
 			this.activeMessageForComment = null;
 
@@ -300,29 +225,23 @@ export default {
 						},
 					}
 				);
+
 				// Aggiorno localmente il messaggio
 				const newComment = res.data;
-				const msg = this.messages.find(
-					(m) => m.messageId === messageId
-				);
-				if (msg) {
-					msg.comments = msg.comments || [];
-					msg.comments.push(newComment);
-				}
+				this.$emit("addComment", { messageId, newComment });
 			} catch (err) {
 				console.error("Errore nel salvataggio commento", err);
 			}
 		},
 
-		handleClickComment(comment) {
-			const message = this.messages.find(
-				(m) => m.messageId === comment.messageId
-			);
-
-			if (message) {
-				this.commentPopup = message;
-			}
+		openCommentPopup(comment) {
+			this.$emit("openCommentPopup", comment);
 		},
+
+		closeCommentPopup() {
+			this.$emit("closeCommentPopup");
+		},
+
 		async handleDeleteComment(comment) {
 			try {
 				await this.$axios.delete(
@@ -333,18 +252,29 @@ export default {
 						},
 					}
 				);
+
 				// aggiorno la lista locale
-				this.commentPopup.comments = this.commentPopup.comments.filter(
-					(c) => c.commentId !== comment.commentId
-				);
+				this.$emit("deleteComment", comment);
 			} catch (err) {
 				console.error("Errore nella cancellazione del commento", err);
 			}
 		},
 
+		/* --- Forward Message --- */
 		async handleForward(message) {
 			this.forwardingMessage = message;
 		},
+
+		/* --- Reply Message --- */
+		handleReply(message) {
+			this.replyingToMessage = message;
+		},
+
+		clearReply() {
+			this.replyingToMessage = null;
+		},
+
+		/* -------------- GESTIONE GRUPPI -------------- */
 
 		async leaveGroup() {
 			try {
@@ -356,21 +286,100 @@ export default {
 						},
 					}
 				);
-				// aggiorno la lista locale
-				this.members = this.members.filter(
-					(m) => m.userId !== this.userId
-				);
 				this.$router.push("/Home");
-				this.$root.showToast("hai abbandonato il gruppo!");
 				if (this.members.length === 0) {
-					this.$root.showToast("Gruppo eliminato perchè vuoto!");
+					this.$root.showToast(
+						"Hai abbandonato il gruppo! \n Gruppo eliminato perchè vuoto!"
+					);
+				} else {
+					this.$root.showToast(
+						"Hai abbandonato il gruppo!",
+						"success"
+					);
 				}
 			} catch (err) {
 				console.error("Errore nell'abbandono del gruppo", err);
 			}
 		},
 
-		async addMembers(memberId) {},
+		async addMembers(newMembers) {
+			for (const member of newMembers) {
+				try {
+					await this.$axios.post(
+						`/conversations/${this.conversationId}/add`,
+						{ userId: member.userId },
+						{
+							headers: {
+								Authorization: `Bearer ${this.userId}`,
+							},
+						}
+					);
+
+					// Aggiorno i membri localmente
+					this.$emit("updateGroupMembers", member);
+				} catch (err) {
+					console.error("Errore nell'inserimento al gruppo", err);
+				}
+			}
+			if (newMembers.lenght === 1) {
+				this.$root.showToast("Membro aggiunto con successo", "success");
+			} else {
+				this.$root.showToast("Membri aggiunti con successo");
+			}
+		},
+
+		async updateGroupName(newName) {
+			try {
+				await this.$axios.put(
+					`/conversations/${this.conversationId}/name`,
+					{ name: newName },
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
+
+				this.$root.showToast(
+					"Nome del gruppo modificato con successo!",
+					"success"
+				);
+				// Aggiorno il nome localmente
+				this.$emit("updateGroupName", newName);
+			} catch (err) {
+				console.error(
+					"Errore nell'aggiornamento del nome del gruppo",
+					err
+				);
+			}
+		},
+
+		async updateGroupPhoto(newPhoto) {
+			try {
+				await this.$axios.put(
+					`/conversations/${this.conversationId}/photo`,
+					{ photo: newPhoto },
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
+
+				this.$root.showToast(
+					"Foto del gruppo modificata con successo!",
+					"success"
+				);
+
+				// Aggiorno la foto localmente
+				this.$emit("updateGroupPhoto", newPhoto);
+			} catch (err) {
+				console.error(
+					"Errore nell'aggiornamento della foto del gruppo",
+					err
+				);
+			}
+		},
 	},
 };
 </script>

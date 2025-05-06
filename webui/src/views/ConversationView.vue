@@ -15,6 +15,7 @@
 				>
 					<ConversationItem
 						:conversation="conv"
+						:isSelected="conv.conversationId == conversationId"
 						@click="
 							$router.push({
 								path: `/conversations/${conv.conversationId}`,
@@ -30,10 +31,28 @@
 			</div>
 		</div>
 
-		<!-- Finestra messaggi -->
+		<!-- Finestra messaggi a destra -->
 		<ConversationWindow
+			ref="conversationWindow"
 			:conversationId="conversationId"
-			@messageSent="messageSent = true"
+			:members="members"
+			:messages="messages"
+			:conversationName="conversationName"
+			:conversationPhoto="conversationPhoto"
+			:conversationType="conversationType"
+			:commentPopupMessage="commentPopupMessage"
+			:conversationInfoOpen="conversationInfoOpen"
+			@updateMessages="updateMessages"
+			@updateGroupName="updateGroupName"
+			@updateGroupPhoto="updateGroupPhoto"
+			@updateGroupMembers="updateGroupMembers"
+			@addComment="addComment"
+			@deleteComment="deleteComment"
+			@openCommentPopup="openCommentPopup"
+			@closeCommentPopup="closeCommentPopup"
+			@openCloseConversationInfo="
+				conversationInfoOpen = !conversationInfoOpen
+			"
 		/>
 	</div>
 </template>
@@ -47,31 +66,105 @@ export default {
 
 	data() {
 		return {
+			messages: [],
+			members: [],
 			conversations: [],
 			userId: null,
 			messageSent: false,
 			searchQuery: "",
+			pollingInterval: null,
+			conversationName: this.$route.query.name,
+			conversationPhoto: this.$route.query.photo,
+			conversationType: this.$route.query.type,
+			commentPopupMessage: null,
+			conversationInfoOpen: false,
 		};
 	},
 	computed: {
 		conversationId() {
-			return this.$route.params.conversationId;
+			return Number(this.$route.params.conversationId);
 		},
 
 		filteredConversations() {
-			return this.conversations.filter((conv) =>
-				conv.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-			);
+			if (this.conversations) {
+				return this.conversations.filter((conv) =>
+					conv.name
+						.toLowerCase()
+						.includes(this.searchQuery.toLowerCase())
+				);
+			}
 		},
 	},
 
-	created() {
+	watch: {
+		"$route.params.conversationId": {
+			async handler(newId, oldId) {
+				if (oldId && oldId !== newId) {
+					this.conversationName = this.$route.query.name;
+					this.conversationPhoto = this.$route.query.photo;
+					this.conversationType = this.$route.query.type;
+					this.conversationInfoOpen = false;
+					await this.deleteEmptyConversation(oldId);
+					this.messageSent = false;
+					if (this.conversationType === "group") {
+						this.fetchMembers();
+					}
+					this.fetchConversations();
+					await this.fetchMessages();
+					this.$nextTick(() => {
+						if (
+							this.$refs.conversationWindow &&
+							this.$refs.conversationWindow.scrollToBottom
+						) {
+							this.$refs.conversationWindow.scrollToBottom();
+						}
+					});
+				}
+			},
+		},
+	},
+
+	mounted() {
+		this.userId = sessionStorage.getItem("userId");
 		this.fetchConversations();
+		if (this.conversationType === "group") {
+			this.fetchMembers();
+		}
+		this.fetchMessages().then(() => {
+			this.$nextTick(() => {
+				if (
+					this.$refs.conversationWindow &&
+					this.$refs.conversationWindow.scrollToBottom
+				) {
+					this.$refs.conversationWindow.scrollToBottom();
+				}
+			});
+		});
+
+		// Avvio il polling per il fetch dei membri, conversazioni, messaggi e controllo dell'esistenza
+		this.pollingInterval = setInterval(() => {
+			if (this.conversationType === "group") {
+				this.fetchMembers();
+			}
+			this.fetchMessages();
+			this.fetchConversations();
+			this.checkConversationInfoUpdates(this.conversations);
+			this.checkConversationExistance();
+		}, 5000);
+	},
+
+	beforeDestroy() {
+		this.clearPolling();
+	},
+
+	beforeRouteLeave(_, __, next) {
+		this.clearPolling();
+		this.deleteEmptyConversation(this.conversationId).finally(() => next());
 	},
 
 	methods: {
+		/* -------------- FETCH -------------- */
 		async fetchConversations() {
-			this.userId = sessionStorage.getItem("userId");
 			try {
 				const res = await this.$axios.get("/conversations", {
 					headers: {
@@ -83,30 +176,220 @@ export default {
 				console.error("Errore nel caricamento conversazioni", err);
 			}
 		},
-	},
 
-	beforeRouteLeave(_, __, next) {
-		if (!this.messageSent) {
+		async fetchMessages() {
 			try {
-				this.$axios.delete(`/conversations/${this.conversationId}`, {
-					headers: {
-						Authorization: `Bearer ${this.userId}`,
-					},
-				});
-				console.log("Conversazione eliminata perché vuota");
-				next();
+				const res = await this.$axios.get(
+					`/conversations/${this.conversationId}`,
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
+				if (res.data) {
+					this.messages = res.data;
+					this.messageSent = true;
+				}
 			} catch (err) {
-				console.error("Errore nella cancellazione conversazione", err);
-				next();
+				console.error("Errore nel caricamento dei messaggi", err);
 			}
-		} else {
-			next();
-		}
+		},
+
+		async fetchMembers() {
+			try {
+				const res = await this.$axios.get(
+					`/conversations/${this.conversationId}/members`,
+					{
+						headers: {
+							Authorization: `Bearer ${this.userId}`,
+						},
+					}
+				);
+				if (res.data) {
+					this.members = res.data;
+				}
+			} catch (err) {
+				console.error(
+					"errore nel caricamento dei membri della conversazione",
+					err
+				);
+			}
+		},
+
+		/* -------------- UTILITY -------------- */
+
+		checkConversationExistance() {
+			if (
+				!this.conversationId ||
+				isNaN(this.conversationId) ||
+				this.conversationId === 0
+			)
+				return;
+
+			if (!this.conversations) {
+				this.clearPolling();
+				this.$root.showToast(
+					"Conversazione eliminata perché senza messaggi!",
+					"warning"
+				);
+				this.$router.push("/Home");
+				return;
+			}
+
+			const conv = this.conversations.find(
+				(c) => c.conversationId === this.conversationId
+			);
+			if (
+				!conv &&
+				this.$route.name === "Conversation" &&
+				this.messageSent
+			) {
+				this.clearPolling();
+				this.$root.showToast(
+					"Conversazione eliminata perché senza messaggi!",
+					"warning"
+				);
+				this.$router.push("/Home");
+			} else {
+				return;
+			}
+		},
+
+		checkConversationInfoUpdates(conversations) {
+			for (const conv of conversations) {
+				if (conv.conversationId === this.conversationId) {
+					if (conv.name != this.conversationName)
+						this.conversationName = conv.name;
+					if (conv.photo != this.conversationPhoto)
+						this.conversationPhoto = conv.photo;
+				}
+			}
+		},
+
+		async deleteEmptyConversation(conversationId) {
+			if (!this.messageSent) {
+				try {
+					await this.$axios.delete(
+						`/conversations/${conversationId}`,
+						{
+							headers: { Authorization: `Bearer ${this.userId}` },
+						}
+					);
+					this.$root.showToast(
+						"Conversazione eliminata perché senza messaggi!",
+						"warning"
+					);
+				} catch (err) {
+					console.error(
+						"Errore nella cancellazione conversazione",
+						err
+					);
+				}
+			}
+		},
+
+		clearPolling() {
+			if (this.pollingInterval) {
+				clearInterval(this.pollingInterval);
+				this.pollingInterval = null;
+			}
+		},
+
+		/* -------------- GESTIONE GRUPPI -------------- */
+
+		updateGroupName(newName) {
+			this.conversationName = newName;
+			this.$router.replace({
+				query: {
+					...this.$route.query,
+					name: newName,
+				},
+			});
+			this.fetchConversations();
+		},
+
+		updateGroupPhoto(newPhoto) {
+			this.conversationPhoto = newPhoto;
+			this.$router.replace({
+				query: {
+					...this.$route.query,
+					photo: newPhoto,
+				},
+			});
+			this.fetchConversations();
+		},
+
+		updateGroupMembers(newMember) {
+			this.members.push(newMember);
+		},
+
+		updateMessages(message, flag) {
+			if (flag === "add") {
+				this.messageSent = true;
+				this.messages.push(message);
+				if (
+					this.$refs.conversationWindow &&
+					this.$refs.conversationWindow.scrollToBottom
+				) {
+					this.$refs.conversationWindow.scrollToBottom();
+				}
+			} else if (flag === "delete") {
+				this.messages = this.messages.filter(
+					(m) => m.messageId !== message.messageId
+				);
+
+				// Se il messaggio eliminato era l'ultimo della conversazione, torno alla Home
+				if (this.messages.length === 0) {
+					this.$router.push("/Home");
+					this.$root.showToast(
+						"Conversazione eliminata perchè vuota!",
+						"warning"
+					);
+				}
+			}
+		},
+
+		/* -------------- GESTIONE COMMENTI -------------- */
+
+		addComment({ messageId, newComment }) {
+			const msg = this.messages.find((m) => m.messageId === messageId);
+			if (msg) {
+				msg.comments = msg.comments || [];
+				msg.comments.push(newComment);
+			}
+		},
+
+		deleteComment(comment) {
+			this.commentPopupMessage.comments =
+				this.commentPopupMessage.comments.filter(
+					(c) => c.commentId !== comment.commentId
+				);
+			this.$root.showToast("Commento eliminato con successo", "success");
+			if (this.commentPopupMessage.comments.length === 0) {
+				this.closeCommentPopup();
+			}
+			this.fetchMessages();
+		},
+
+		openCommentPopup(comment) {
+			const message = this.messages.find(
+				(m) => m.messageId === comment.messageId
+			);
+
+			if (message) {
+				this.commentPopupMessage = message;
+			}
+		},
+
+		closeCommentPopup() {
+			this.commentPopupMessage = null;
+		},
 	},
 };
 </script>
 
-<style>
+<style scoped>
 .conversation-view {
 	display: flex;
 	height: 100%;
@@ -123,13 +406,14 @@ export default {
 	background-color: #f3f3f3;
 	border-radius: 10px;
 	transition: all 0.5s;
-	margin-top: 10px;
+	margin-top: 15px;
+	margin-bottom: 10px;
 	box-sizing: border-box;
 }
 
 .search-bar:hover,
 .search-bar:focus {
-	border: 2px solid #4a9dec;
+	border: 2px solid #73bfa1;
 	background-color: white;
 }
 

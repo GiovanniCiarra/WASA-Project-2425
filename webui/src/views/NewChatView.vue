@@ -1,5 +1,6 @@
 <template>
 	<div class="new-chat-container">
+		<div class="page-title">Inizia una Nuova Chat</div>
 		<div class="new-chat-panel">
 			<input
 				v-model="searchQuery"
@@ -43,6 +44,11 @@ export default {
 			);
 		},
 	},
+
+	created() {
+		this.fetchUsers();
+	},
+
 	methods: {
 		async fetchUsers() {
 			this.userId = sessionStorage.getItem("userId");
@@ -120,9 +126,6 @@ export default {
 			}
 		},
 	},
-	created() {
-		this.fetchUsers();
-	},
 };
 </script>
 
@@ -130,20 +133,30 @@ export default {
 .new-chat-container {
 	flex-grow: 1;
 	display: flex;
-	justify-content: center;
+	flex-direction: column;
 	align-items: center;
-	background-color: #d9dbd5;
+	background: radial-gradient(circle at top left, #73bfa1, #a1ded0, #cdeee1);
 	height: 100%;
-	padding: 20px;
+	padding: 30px 20px;
 	box-sizing: border-box;
+}
+
+.page-title {
+	font-size: 2.2rem;
+	font-weight: 700;
+	color: white;
+	margin-bottom: 20px;
+	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	text-align: center;
+	font-family: "Poppins", sans-serif;
 }
 
 .new-chat-panel {
 	background-color: white;
 	width: 100%;
 	max-width: 900px;
-	height: 85vh;
-	border-radius: 12px;
+	height: 75vh;
+	border-radius: 16px;
 	padding: 20px;
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 	display: flex;
@@ -165,11 +178,13 @@ export default {
 
 .search-bar:hover,
 .search-bar:focus {
-	border: 2px solid #4a9dec;
+	border: 2px solid #73bfa1;
+	box-shadow: 0px 0px 0px 7px rgb(74, 157, 236, 20%);
 	background-color: white;
 }
 
 .user-list {
+	max-height: calc(85vh - 150px);
 	flex-grow: 1;
 	overflow-y: auto;
 	display: flex;

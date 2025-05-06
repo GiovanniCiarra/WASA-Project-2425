@@ -2,7 +2,7 @@
 	<div class="comment-details-overlay">
 		<div class="comment-details">
 			<div class="comment-details-header">
-				<span>Commenti al messaggio</span>
+				<span class="title">Commenti al messaggio</span>
 				<img
 					@click="$emit('close')"
 					class="close-btn"
@@ -17,7 +17,14 @@
 			<ul v-else>
 				<li v-for="comment in comments" :key="comment.commentId">
 					<span class="emoji">{{ comment.content }}</span>
-					<span class="username">{{ comment.sender }}</span>
+					<div class="user-info">
+						<span class="username">{{ comment.sender }}</span>
+						<span
+							v-if="Number(comment.senderId) === currentUser"
+							class="you-label"
+							>(tu)</span
+						>
+					</div>
 					<button
 						v-if="Number(comment.senderId) === currentUser"
 						class="delete-btn"
@@ -71,6 +78,10 @@ export default {
 	margin-bottom: 12px;
 }
 
+.title {
+	font-weight: bold;
+}
+
 ul {
 	list-style: none;
 	padding: 0;
@@ -88,10 +99,21 @@ li {
 	font-size: 1.3rem;
 }
 
-.username {
+.user-info {
+	display: flex;
+	align-items: center;
 	flex-grow: 1;
 	margin-left: 10px;
+}
+
+.username {
 	color: #444;
+}
+
+.you-label {
+	font-size: 0.8rem;
+	color: #888;
+	margin-left: 6px;
 }
 
 .delete-btn {
@@ -112,5 +134,9 @@ li {
 
 .close-btn:hover {
 	opacity: 1;
+}
+
+.empty {
+	margin-left: 25%;
 }
 </style>

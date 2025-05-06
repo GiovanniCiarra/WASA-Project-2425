@@ -52,6 +52,13 @@ type Conversation struct {
 	LastMessage    Message `json:"lastMessage"`
 }
 
+type ReplyInfo struct {
+	MessageId      int    `json:"messageId"`
+	Content        string `json:"content"`
+	Type           string `json:"type"`
+	SenderUsername string `json:"senderUsername"`
+}
+
 type Message struct {
 	MessageId      int       `json:"messageId"`
 	ConversationId int       `json:"conversationId"`
@@ -60,9 +67,11 @@ type Message struct {
 	SenderId       int       `json:"senderId"`
 	SenderUsername string    `json:"senderUsername"`
 	Timestamp      string    `json:"timestamp"`
-	Status         string    `json:"status"`
+	Status         string    `json:"status,omitempty"`
 	Comments       []Comment `json:"comments,omitempty"`
-	IsForwarded    int       `json:"isForwarded"`
+	IsForwarded    int       `json:"isForwarded,omitempty"`
+	IsReply        int       `json:"isReply,omitempty"`
+	ReplyTo        ReplyInfo `json:"replyTo,omitempty" `
 }
 
 type Comment struct {
@@ -88,7 +97,7 @@ type AppDatabase interface {
 	CreateConversation(userId int, name string, photo string, members []int) (int, error)
 	GetUserInformationById(userId int) (string, string, error)
 	IsUserInConversation(userId int, conversationId int) (bool, error)
-	SaveMessage(conversationId, senderId, isForwarded int, content, msgType string) (int, error)
+	SaveMessage(conversationId, senderId, isForwarded, replyTo int, content, msgType string) (int, error)
 	IsMessageOwner(senderId, messageId, conversationId int) (bool, error)
 	DeleteMessage(messageId int) error
 	DoesConversationHaveMessages(conversationId int) (bool, error)
@@ -103,7 +112,7 @@ type AppDatabase interface {
 	RemoveFromGroup(userId, conversationId int) error
 	DoesGroupHaveMembers(conversationId int) (bool, error)
 	UpdateGroupName(conversationId int, newName string) error
-	UpdateGroupPhoto(conversationId int, image []byte) error
+	UpdateGroupPhoto(conversationId int, image string) error
 	UpdateMessagesToReceived(userId int) error
 	UpdateMessagesToRead(userId, conversationId int) error
 	GetConversationMembers(conversationId int) ([]User, error)
@@ -184,8 +193,10 @@ func New(db *sql.DB) (AppDatabase, error) {
 										type TEXT NOT NULL CHECK(type IN ('text', 'photo')),
 										status TEXT NOT NULL CHECK(status IN ('sent', 'received', 'read')),
 										isForwarded INTEGER NOT NULL CHECK(isForwarded IN(0,1)),
+										replyTo INTEGER NOT NULL,
 										FOREIGN KEY (senderId) REFERENCES user_table(userId) ON DELETE CASCADE,
-										FOREIGN KEY (conversationId) REFERENCES conversation_table(conversationId) ON DELETE CASCADE
+										FOREIGN KEY (conversationId) REFERENCES conversation_table(conversationId) ON DELETE CASCADE,
+										FOREIGN KEY (replyTo) REFERENCES message_table(messageId) ON DELETE CASCADE
 										);`
 		_, err = db.Exec(sqlStmt)
 		if err != nil {

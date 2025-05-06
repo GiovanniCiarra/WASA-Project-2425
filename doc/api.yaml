@@ -426,6 +426,7 @@ paths:
         "500":
           description: Internal Server Error
 
+  /conversations/create:
     post:
       operationId: createConversation
       tags: ["chats"]
@@ -612,6 +613,43 @@ paths:
       responses:
         "201":
           description: the message is forwarded succesfully and a new message is created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/message"
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: internal Server Error
+
+  /messages/{messageId}/reply:
+    parameters:
+      - $ref: "#/components/parameters/messageId"
+    post:
+      operationId: replyMessage
+      tags: ["chats"]
+      summary: reply to a message
+      description: |
+        reply to an existing message in the same conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: the content and the type of the new message
+              type: object
+              properties:
+                content:
+                  $ref: "#/components/schemas/message/properties/content"
+                type:
+                  $ref: "#/components/schemas/message/properties/type"
+      responses:
+        "201":
+          description: the message is replayed succesfully and a new message is created
           content:
             application/json:
               schema:

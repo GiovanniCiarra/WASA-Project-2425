@@ -1,7 +1,10 @@
 <template>
 	<div class="header-container" @click="$emit('openInfo')">
 		<img
-			:src="photo || defaultConversationPhoto"
+			:src="
+				photo ||
+				(type === 'group' ? defaultGroupPhoto : defaultUserPhoto)
+			"
 			alt="Foto"
 			class="header-photo"
 		/>
@@ -10,7 +13,8 @@
 </template>
 
 <script>
-import defaultConversationPhoto from "../assets/images/default-user.png";
+import defaultGroupPhoto from "../assets/images/default-group-48.png";
+import defaultUserPhoto from "../assets/images/default-user-48.png";
 
 export default {
 	props: {
@@ -23,7 +27,8 @@ export default {
 
 	data() {
 		return {
-			defaultConversationPhoto,
+			defaultGroupPhoto,
+			defaultUserPhoto,
 		};
 	},
 };

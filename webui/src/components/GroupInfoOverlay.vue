@@ -1,76 +1,83 @@
 <template>
-	<div class="info-overlay">
-		<div class="top-bar">
-			<img
-				@click="$emit('closeOverlay')"
-				class="close-btn"
-				src="../assets/icons/close-big.png"
-				alt="Close"
-			/>
-			<h1 class="title">Info Gruppo</h1>
-		</div>
+	<transition name="slide" @after-leave="$emit('closeOverlay')">
+		<div class="info-overlay" v-if="visible">
+			<div class="top-bar">
+				<img
+					@click="visible = false"
+					class="close-btn"
+					src="../assets/icons/close-big.png"
+					alt="Close"
+				/>
+				<h1 class="title">Info Gruppo</h1>
+			</div>
 
-		<div class="info-content">
-			<div class="group-header">
-				<div class="photo-wrapper" @click="onChangePhoto">
-					<img
-						:src="newGroupPhoto || groupPhoto || defaultGroupPhoto"
-						alt="Foto Gruppo"
-						class="info-photo"
-					/>
-					<input
-						type="file"
-						ref="fileInput"
-						@change="onFileSelected"
-						accept="image/*"
-						class="hidden-input"
+			<div class="info-content">
+				<div class="group-header">
+					<div class="photo-wrapper" @click="onChangePhoto">
+						<img
+							:src="
+								newGroupPhoto || groupPhoto || defaultGroupPhoto
+							"
+							alt="Foto Gruppo"
+							class="info-photo"
+						/>
+						<input
+							type="file"
+							ref="fileInput"
+							@change="onFileSelected"
+							accept="image/*"
+							class="hidden-input"
+						/>
+					</div>
+					<div class="name-edit">
+						<input
+							v-model="newGroupName"
+							class="name-input"
+							:placeholder="groupName"
+							@keyup.enter="saveGroupName"
+						/>
+						<button
+							class="save-btn"
+							@click="saveGroupName"
+							:disabled="!canSave"
+						>
+							Salva
+						</button>
+					</div>
+				</div>
+
+				<div class="participants-header">Partecipanti:</div>
+
+				<div class="member-list-scrollable">
+					<MemberItem
+						v-for="member in members"
+						:key="member.userId"
+						:member="member"
+						:currentUser="currentUser"
+						@leaveGroup="leaveGroup"
 					/>
 				</div>
-				<div class="name-edit">
-					<input
-						v-model="newGroupName"
-						class="name-input"
-						:placeholder="groupName"
-					/>
-					<button
-						class="save-btn"
-						@click="saveGroupName"
-						:disabled="!canSave"
-					>
-						Salva
+
+				<div class="add-member-container">
+					<button class="add-member-btn" @click="showAddPopup = true">
+						<img src="../assets/icons/più.png" alt="Add" />
+						Aggiungi Partecipanti
 					</button>
 				</div>
-			</div>
 
-			<div class="participants-header">Partecipanti:</div>
-
-			<div class="member-list">
-				<MemberItem
-					v-for="member in members"
-					:key="member.userId"
-					:member="member"
-					:currentUser="currentUser"
-					@leaveGroup="leaveGroup"
+				<AddMembersPopup
+					v-if="showAddPopup"
+					:users="availableUsers"
+					@close="showAddPopup = false"
+					@confirm="handleAddMembers"
 				/>
 			</div>
-
-			<button class="add-member-btn" @click="showAddPopup = true">
-				<img src="../assets/icons/più.png" alt="Add" />
-				Aggiungi Partecipanti
-			</button>
-
-			<AddMembersPopup
-				v-if="showAddPopup"
-				:users="availableUsers"
-				@close="showAddPopup = false"
-				@confirm="handleAddMembers"
-			/>
 		</div>
-	</div>
+	</transition>
 </template>
 
 <script>
-import defaultGroupPhoto from "../assets/images/default-user.png";
+import defaultGroupPhoto from "../assets/images/default-group-100.png";
 import MemberItem from "../components/MemberItem.vue";
 import AddMembersPopup from "../components/AddMembersPopup.vue";
 
@@ -96,6 +103,7 @@ export default {
 
 	data() {
 		return {
+			visible: true,
 			defaultGroupPhoto,
 			newGroupName: "",
 			newGroupPhoto: null,
@@ -107,15 +115,21 @@ export default {
 	computed: {
 		canSave() {
 			return (
-				(this.newGroupName.trim() &&
-					this.newGroupName.trim() !== groupName) ||
-				this.newGroupPhoto
+				this.newGroupName.trim() &&
+				this.newGroupName.trim() !== this.groupName
 			);
 		},
 	},
 
-	created() {
-		this.fetchAvailableUsers();
+	watch: {
+		members: {
+			immediate: true,
+			handler(newVal, oldVal) {
+				if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
+					this.fetchAvailableUsers();
+				}
+			},
+		},
 	},
 
 	methods: {
@@ -138,8 +152,8 @@ export default {
 			}
 		},
 
-		handleAddMembers(userIds) {
-			this.$emit("addMembers", userIds);
+		handleAddMembers(newUsers) {
+			this.$emit("addMembers", newUsers);
 			this.showAddPopup = false;
 		},
 
@@ -149,18 +163,24 @@ export default {
 
 		saveGroupName() {
 			if (this.newGroupName.trim() !== "") {
-				this.emit("updateGroupName", this.newGroupName.trim());
+				this.$emit("updateGroupName", this.newGroupName.trim());
 			}
+			this.newGroupName = "";
 		},
 
 		onChangePhoto() {
 			this.$refs.fileInput.click();
 		},
+
 		onFileSelected(event) {
 			const file = event.target.files[0];
 			if (file) {
-				this.newGroupPhoto = file;
-				this.$emit("updateGroupPhoto", file);
+				const reader = new FileReader();
+				reader.onload = () => {
+					this.newGroupPhoto = reader.result;
+					this.$emit("updateGroupPhoto", this.newGroupPhoto);
+				};
+				reader.readAsDataURL(file);
 			}
 		},
 	},
@@ -175,33 +195,40 @@ export default {
 	flex-grow: 1;
 	display: flex;
 	flex-direction: column;
-	animation: slideDown 0.4s ease forwards;
+	height: 100%;
+	box-sizing: border-box;
 }
 
-@keyframes slideDown {
-	from {
-		transform: translateY(-20px);
-		opacity: 0;
-	}
-	to {
-		transform: translateY(0);
-		opacity: 1;
-	}
+.slide-enter-active,
+.slide-leave-active {
+	transition: all 0.4s ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+	transform: translateY(-20px);
+	opacity: 0;
+}
+
+.slide-enter-to,
+.slide-leave-from {
+	transform: translateY(0);
+	opacity: 1;
 }
 
 .top-bar {
 	display: flex;
+	justify-content: flex-end;
 	align-items: center;
 	margin-bottom: 20px;
+	position: relative;
 }
 
 .close-btn {
-	font-size: 1.8rem;
-	background: none;
-	border: none;
+	width: 32px;
+	height: 32px;
 	cursor: pointer;
-	margin-right: 20px;
-	opacity: 0.6;
+	opacity: 0.7;
 }
 
 .close-btn:hover {
@@ -209,21 +236,34 @@ export default {
 }
 
 .title {
-	font-size: 2rem;
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	font-size: 2.2rem;
 	font-weight: bold;
+	color: rgb(69, 69, 69);
 }
 
 .info-content {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	flex-grow: 1;
+	width: 100%;
 }
 
 .group-header {
 	display: flex;
 	align-items: center;
-	gap: 20px;
+	background: rgba(255, 255, 255, 0.2);
+	backdrop-filter: blur(10px);
+	padding: 20px 30px;
+	border-radius: 20px;
+	width: 100%;
+	max-width: 700px;
 	margin-bottom: 20px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+	gap: 20px;
 }
 
 .photo-wrapper {
@@ -232,11 +272,17 @@ export default {
 }
 
 .info-photo {
-	width: 100px;
-	height: 100px;
+	width: 120px;
+	height: 120px;
 	border-radius: 50%;
 	object-fit: cover;
-	border: 2px solid #2fa27a;
+	box-shadow: 0 4px 12px solid rgba(0, 0, 0, 0.2);
+	transition: transofr 0.3s ease, box-shadow 0.3s ease;
+}
+
+.photo-wrapper:hover .info-photo {
+	transform: scale(1.05);
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .hidden-input {
@@ -245,53 +291,94 @@ export default {
 
 .name-edit {
 	display: flex;
+	flex-direction: row;
 	align-items: center;
+	width: 100%;
 	gap: 10px;
 }
 
 .name-input {
-	font-size: 1.4rem;
-	padding: 8px 12px;
-	border: 1px solid #ccc;
-	border-radius: 8px;
-	width: 300px;
+	flex-grow: 1;
+	width: auto;
+	max-width: none;
+	padding: 16px 20px;
+	font-size: 1.1rem;
+	border: 1px solid #ddd;
+	border-radius: 12px;
+	background-color: rgba(255, 255, 255, 0.9);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+	text-align: center;
+	transition: all 0.3s ease;
+	font-weight: 500;
+}
+
+.name-input:focus {
+	border-color: #73bfa1;
+	box-shadow: 0 0 8px rgba(74, 157, 236, 0.4);
+	outline: none;
+}
+
+.name-input::placeholder {
+	color: #aaa;
+	text-align: center;
+	font-weight: 500;
 }
 
 .save-btn {
-	padding: 8px 14px;
-	background-color: #2fa27a;
-	color: white;
+	height: 52px;
+	padding: 0 30px;
+	font-size: 1.1rem;
 	border: none;
-	border-radius: 8px;
+	border-radius: 50px;
+	background: linear-gradient(135deg, #2fa27a, #73bfa1);
+	color: white;
 	cursor: pointer;
-	font-size: 1rem;
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .save-btn:hover {
-	background-color: #27986d;
+	background: linear-gradient(135deg, #24996d, #5bb896);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+	transform: translateY(-2px);
 }
 
 .save-btn:disabled {
-	background-color: #a5d6c5;
+	background: #a5d6c5;
 	cursor: not-allowed;
+	box-shadow: none;
+	transform: none;
 }
 
 .participants-header {
 	align-self: flex-start;
 	font-size: 1.4rem;
-	margin: 70px 0 10px 0;
+	margin: 20px 0 10px 0;
 	font-weight: 600;
 	color: #2fa27a;
+	width: 100%;
 }
 
-.member-list {
+.member-list-scrollable {
 	width: 100%;
+	flex-grow: 1;
+	max-height: calc(100vh - 520px);
+	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
+	margin-bottom: 10px;
+	scroll-behavior: smooth;
+}
+
+.add-member-container {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding-top: 10px;
+	margin-top: 10px;
 }
 
 .add-member-btn {
-	margin-top: 20px;
 	padding: 1.3em 3em;
 	font-size: 12px;
 	font: sans-serif;

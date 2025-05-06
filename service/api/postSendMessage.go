@@ -3,9 +3,11 @@ package api
 import (
 	"Progetto/service/api/reqcontext"
 	"Progetto/service/database"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -62,12 +64,34 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	if len(requestBody.Content) == 0 || len(requestBody.Content) > 1398101 {
-		ctx.Logger.WithError(err).Error("Invalid message content lenght")
-		http.Error(writer, "Invalid message content lenght", http.StatusBadRequest)
-		return
-	}
+	//Se un immagine, controllo che sia in base64 e non troppo pesante
+	if requestBody.Type == "photo" {
+		if !strings.HasPrefix(requestBody.Content, "data:image/png") {
+			http.Error(writer, "Invalid image Format", http.StatusBadRequest)
+			ctx.Logger.WithError(err).Error("Invalid image Format")
+			return
+		}
 
+		parts := strings.SplitN(requestBody.Content, ",", 2)
+		if len(parts) != 2 {
+			http.Error(writer, "invalid base64 format", http.StatusBadRequest)
+			ctx.Logger.WithError(err).Error("Invalid base64 Format")
+			return
+		}
+
+		data, err := base64.StdEncoding.DecodeString(parts[1])
+		if err != nil {
+			http.Error(writer, "invalid base64 encoding", http.StatusBadRequest)
+			ctx.Logger.WithError(err).Error("Invalid base64 encoding")
+			return
+		}
+
+		if len(data) > 500*1024 {
+			http.Error(writer, "image too large", http.StatusBadRequest)
+			ctx.Logger.WithError(err).Error("Image too large")
+			return
+		}
+	}
 	// Controllo che l'utente partecipi alla conversazione
 	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
 	if err != nil {
@@ -83,7 +107,7 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 	}
 
 	// Inserisco il messaggio nel database
-	messageId, err := rt.db.SaveMessage(conversationId, userId, 0, requestBody.Content, requestBody.Type)
+	messageId, err := rt.db.SaveMessage(conversationId, userId, 0, -1, requestBody.Content, requestBody.Type)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to save message")
 		http.Error(writer, "Failed to save message", http.StatusInternalServerError)

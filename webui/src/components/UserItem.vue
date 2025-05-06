@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import defaultUserPhoto from "../assets/images/default-user.png";
+import defaultUserPhoto from "../assets/images/default-user-48.png";
 
 export default {
 	props: {
@@ -70,6 +70,7 @@ export default {
 	height: 42px;
 	border-radius: 50%;
 	object-fit: cover;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .user-name {

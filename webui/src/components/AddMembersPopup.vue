@@ -15,8 +15,8 @@
 					v-for="user in users"
 					:key="user.userId"
 					class="user-item"
-					@click="toggleSelection(user.userId)"
-					:class="{ selected: selectedUserIds.includes(user.userId) }"
+					@click="toggleSelection(user)"
+					:class="{ selected: isSelected(user) }"
 				>
 					<img
 						:src="user.photo || defaultUserPhoto"
@@ -25,9 +25,17 @@
 					/>
 					<span class="username">{{ user.username }}</span>
 				</div>
+
+				<div v-if="users.length === 0" class="no-users-msg">
+					Nessun utente disponibile da aggiungere
+				</div>
 			</div>
 
-			<button class="confirm-btn" @click="confirmSelection">
+			<button
+				class="confirm-btn"
+				@click="confirmSelection"
+				:disabled="!canConfirm"
+			>
 				Conferma
 			</button>
 		</div>
@@ -35,31 +43,45 @@
 </template>
 
 <script>
-import defaultUserPhoto from "../assets/images/default-user.png";
+import defaultUserPhoto from "../assets/images/default-user-48.png";
 
 export default {
 	props: {
 		users: Array,
 	},
+
 	emits: ["close", "confirm"],
+
 	data() {
 		return {
 			defaultUserPhoto,
-			selectedUserIds: [],
+			selectedUsers: [],
 		};
 	},
+
+	computed: {
+		canConfirm() {
+			return this.selectedUsers.length > 0;
+		},
+	},
+
 	methods: {
-		toggleSelection(userId) {
-			if (this.selectedUserIds.includes(userId)) {
-				this.selectedUserIds = this.selectedUserIds.filter(
-					(id) => id !== userId
+		isSelected(user) {
+			return this.selectedUsers.some((u) => u.userId === user.userId);
+		},
+
+		toggleSelection(user) {
+			if (this.selectedUsers.some((u) => u.userId === user.userId)) {
+				this.selectedUsers = this.selectedUsers.filter(
+					(u) => u.userId !== user.userId
 				);
 			} else {
-				this.selectedUserIds.push(userId);
+				this.selectedUsers = [...this.selectedUsers, user];
 			}
 		},
+
 		confirmSelection() {
-			this.$emit("confirm", this.selectedUserIds);
+			this.$emit("confirm", this.selectedUsers);
 		},
 	},
 };
@@ -142,10 +164,19 @@ export default {
 	border-radius: 50%;
 	object-fit: cover;
 	margin-right: 12px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .username {
 	font-size: 1rem;
+}
+
+.no-users-msg {
+	text-align: center;
+	font-size: 1rem;
+	color: #888;
+	padding: 20px;
+	font-style: italic;
 }
 
 .confirm-btn {
@@ -161,5 +192,10 @@ export default {
 
 .confirm-btn:hover {
 	background-color: #27986d;
+}
+
+.confirm-btn:disabled {
+	background-color: #a5d6c5;
+	cursor: not-allowed;
 }
 </style>
