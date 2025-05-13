@@ -10,6 +10,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// postForwardMessage allows a user to forward an existing message to another conversation.
+// It checks permissions and returns the new message created.
+
 func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -34,14 +37,14 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 		return
 	}
 
-	// Decodifico al richiesta
+	// Decodifico la richiesta
 	var requestBody struct {
 		TargetChatId int `json:"targetChatId"`
 	}
 
 	if err := json.NewDecoder(reader.Body).Decode(&requestBody); err != nil {
-		http.Error(writer, "Invalid JSON Format", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Invalid JSON Format")
+		http.Error(writer, "Invalid JSON format", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Invalid JSON format")
 		return
 	}
 
@@ -56,8 +59,8 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 	// Estraggo il contenuto del messaggio tramite il messageId
 	originalMessage, err := rt.db.GetMessageById(messageId)
 	if err != nil {
-		http.Error(writer, "Message not found or not accesible", http.StatusForbidden)
-		ctx.Logger.WithError(err).Error("Message not found or not accesible")
+		http.Error(writer, "Message not found or not accessible", http.StatusForbidden)
+		ctx.Logger.WithError(err).Error("Message not found or not accessible")
 		return
 	}
 
@@ -133,5 +136,5 @@ func (rt *_router) postForwardMessage(writer http.ResponseWriter, reader *http.R
 	}
 
 	// Scrivo il successo dell'operazione
-	ctx.Logger.Infof("Message %d forwarded to conversation %d successfully", messageId, requestBody.TargetChatId)
+	ctx.Logger.Infof("Message %d is forwarded to conversation %d successfully", messageId, requestBody.TargetChatId)
 }

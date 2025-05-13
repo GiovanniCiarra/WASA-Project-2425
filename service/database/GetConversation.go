@@ -1,6 +1,10 @@
 package database
 
-import "fmt"
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+)
 
 func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message, error) {
 
@@ -12,7 +16,7 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 													 ORDER BY mt.timestamp ASC`, conversationId)
 
 	if err != nil {
-		return nil, fmt.Errorf("error in query execution: %w", err)
+		return nil, fmt.Errorf("error in query execution1: %w", err)
 	}
 
 	// rows verrà chiuso automaticamente alla fine della funzione
@@ -40,7 +44,7 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 
 		// Controllo se ci sono stati errori durante l'iterazione
 		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("error retrieving messages: %w", err)
+			return nil, fmt.Errorf("error retrieving messages2: %w", err)
 		}
 	}
 
@@ -48,12 +52,12 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 	for i := range messageList {
 		message := &messageList[i]
 
-		comments, err2 := db.c.Query(`SELECT ct.commentId, ct.messageId,ct.senderId, ct.content, ct.timestamp, ut.name
+		comments, err := db.c.Query(`SELECT ct.commentId, ct.messageId,ct.senderId, ct.content, ct.timestamp, ut.name
 																	FROM comment_table ct 
 																	JOIN user_table ut ON ut.userId = ct.senderId
 																	WHERE ct.messageId = ?`, message.MessageId)
-		if err2 != nil {
-			return nil, fmt.Errorf("error in query execution: %w", err2)
+		if err != nil {
+			return nil, fmt.Errorf("error in query execution3: %w", err)
 		}
 
 		defer comments.Close()
@@ -61,15 +65,15 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 		var commentsList []Comment
 		for comments.Next() {
 			var comment Comment
-			err2 = comments.Scan(&comment.CommentId, &comment.MessageId, &comment.SenderId, &comment.Content, &comment.Timestamp, &comment.Sender)
-			if err2 != nil {
-				return nil, fmt.Errorf("error scanning comment rows: %w", err2)
+			err = comments.Scan(&comment.CommentId, &comment.MessageId, &comment.SenderId, &comment.Content, &comment.Timestamp, &comment.Sender)
+			if err != nil {
+				return nil, fmt.Errorf("error scanning comment rows: %w", err)
 			}
 			commentsList = append(commentsList, comment)
 		}
 
-		if err2 := comments.Close(); err2 != nil {
-			return nil, fmt.Errorf("error closing comments rows: %w", err2)
+		if err := comments.Close(); err != nil {
+			return nil, fmt.Errorf("error closing comments rows: %w", err)
 		}
 
 		// Controllo se ci sono stati errori durante l'iterazione
@@ -89,7 +93,11 @@ func (db *appdbimpl) GetConversation(userId int, conversationId int) ([]Message,
 												WHERE mt.messageId = ?`, message.IsReply).Scan(&info.Content, &info.Type, &info.SenderUsername)
 
 			if err != nil {
-				return nil, fmt.Errorf("error in query execution: %w", err2)
+				if errors.Is(err, sql.ErrNoRows) {
+					info.Deleted = true
+				} else {
+					return nil, fmt.Errorf("error in query execution4: %w", err)
+				}
 			}
 			message.ReplyTo = info
 		}

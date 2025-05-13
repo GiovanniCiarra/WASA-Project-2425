@@ -11,6 +11,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// postCommentMessage allows a user to add a comment to a message they have access to.
+// Each user can post at most one comment per message.
+
 func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -55,8 +58,8 @@ func (rt *_router) postCommentMessage(writer http.ResponseWriter, reader *http.R
 	}
 
 	if len(requestBody.Content) == 0 || len(requestBody.Content) > 100 {
-		http.Error(writer, "Invalid comment content lenght", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Invalid comment content lenght")
+		http.Error(writer, "Invalid comment content length", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Invalid comment content length")
 		return
 	}
 

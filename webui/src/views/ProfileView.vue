@@ -180,7 +180,7 @@ export default {
 					);
 					break;
 				default:
-					this.$root.showToast("Errore", "error");
+					this.$root.showToast("Errore sconosciuto", "error");
 			}
 		},
 	},

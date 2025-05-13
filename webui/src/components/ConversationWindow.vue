@@ -1,6 +1,7 @@
 <template>
 	<div class="conversation-window">
 		<div class="main-content">
+			<!-- Intestazione conversazione -->
 			<ConversationHeader
 				:name="conversationName"
 				:photo="conversationPhoto"
@@ -8,6 +9,7 @@
 				@openInfo="$emit('openCloseConversationInfo')"
 			/>
 
+			<!-- Overlay info (chat o gruppo) -->
 			<div v-if="conversationInfoOpen" class="info-overlay-container">
 				<!-- Se è un gruppo -->
 				<GroupInfoOverlay
@@ -31,6 +33,8 @@
 					@closeOverlay="$emit('openCloseConversationInfo')"
 				/>
 			</div>
+
+			<!-- Area messaggi -->
 			<div class="message-area" ref="messageArea">
 				<Message
 					v-for="msg in messages"
@@ -43,6 +47,8 @@
 					@delete="handleDeleteMessage"
 					@clickComment="openCommentPopup"
 				/>
+
+				<!-- POPUP -->
 				<CommentPicker
 					v-if="activeMessageForComment"
 					:style="{
@@ -66,14 +72,16 @@
 					:message="forwardingMessage"
 					:userId="userId"
 					@cancel="forwardingMessage = null"
-					@forwarded="forwardingMessage = null"
+					@forwarded="messageForwarded"
 				/>
 
+				<!-- Messaggio informativo se conversazione vuota -->
 				<div v-if="messages.length === 0" class="no-messages">
 					Nessun messaggio
 				</div>
 			</div>
 
+			<!-- Confirm Dialog per DeleteMessage -->
 			<ConfirmDialog
 				v-if="confirmingMessage"
 				:message="'Vuoi davvero eliminare questo messaggio?'"
@@ -81,6 +89,7 @@
 				@cancel="cancelDeleteMessage"
 			/>
 
+			<!-- MessageInput -->
 			<MessageInput
 				:conversationId="conversationId"
 				:replyingTo="replyingToMessage"
@@ -120,23 +129,23 @@ export default {
 			type: [String, Number],
 			required: true,
 		},
-		messages: Array,
-		members: Array,
-		conversationName: String,
-		conversationPhoto: String,
-		conversationType: String,
-		commentPopupMessage: Object,
-		conversationInfoOpen: Boolean,
+		messages: Array, // Array dei messaggi
+		members: Array, // Array dei membri
+		conversationName: String, // Nome della conversazione
+		conversationPhoto: String, // Foto della conversazione
+		conversationType: String, // Tipo della conversazione
+		commentPopupMessage: Object, // Messaggio relativo al commentPopup da aprire
+		conversationInfoOpen: Boolean, // Boolean per aprire/chiudere gli overlay
 	},
 
 	data() {
 		return {
 			userId: null,
-			confirmingMessage: null,
-			activeMessageForComment: null,
-			pickerPosition: { top: 0, left: 0 },
-			forwardingMessage: null,
-			replyingToMessage: null,
+			confirmingMessage: null, // Messaggio da eliminare (apre ConfirmDialg)
+			activeMessageForComment: null, // messaggio da commentare (Apre CommentPicker)
+			pickerPosition: { top: 0, left: 0 }, // Decide la posizione del CommentPicker
+			forwardingMessage: null, // Messaggio da inoltrare (Apre ForwardPopup)
+			replyingToMessage: null, // Messaggio a cui rispondere (Modifica ConversationInput)
 		};
 	},
 
@@ -145,10 +154,12 @@ export default {
 	},
 
 	methods: {
+		/* Riceve l'invio di un messaggio e lo inoltra a ConversationView per update locale */
 		handleMessageSent(message) {
 			this.$emit("updateMessages", message, "add");
 		},
 
+		/* Scrolla i messaggi */
 		scrollToBottom() {
 			this.$nextTick(() => {
 				const container = this.$refs.messageArea;
@@ -158,19 +169,68 @@ export default {
 			});
 		},
 
+		/* Gestore degli errori */
+		handleError(err) {
+			if (!err.response) {
+				this.$root.showToast(
+					"Errore di rete: controlla la connessione.",
+					"error"
+				);
+				return;
+			}
+
+			const status = err.response.status;
+			const detail = err.response.data || "ERRORE";
+
+			switch (status) {
+				case 400:
+					this.$root.showToast(`Errore 400: ${detail}`, "error");
+					break;
+				case 401:
+					this.$root.showToast(
+						"Errore 401: Non autorizzato, effettua di nuovo il login",
+						"error"
+					);
+					this.$router.push("/Login");
+					break;
+				case 403:
+					this.$root.showToast(`Errore 403: ${detail}`, "error");
+					break;
+				case 404:
+					this.$root.showToast(`Errore 404: ${detail}`, "error");
+					break;
+				case 409:
+					this.$root.showToast(
+						"Errore 404: Hai già inserito un commento a questo messaggio",
+						"error"
+					);
+					break;
+				case 500:
+					this.$root.showToast(`Errore 500:\n ${detail}!`, "error");
+					break;
+				default:
+					this.$root.showToast("Errore sconosciuto", "error");
+			}
+		},
+
 		/* -------------- GESTIONE AZIONI -------------- */
 
-		/* --- Delete Message --- */
+		/* *** Delete Message *** */
+
+		/* Riceve l'evento di cancellazione di un messaggio e apre il ConfirmDialog */
 		handleDeleteMessage(message) {
 			this.confirmingMessage = message;
 		},
 
+		/* Riceve la conferma dell'eliminazione di un messaggio,
+			 invia la richiesta al backend 
+			 inoltra a ConversationView per update locale */
 		async confirmDeleteMessage() {
 			const message = this.confirmingMessage;
 			this.confirmingMessage = null;
 			try {
 				await this.$axios.delete(
-					`/conversations/${this.conversationId}/messages/${message.messageId}`,
+					`/conversation-messages/${this.conversationId}/${message.messageId}`,
 					{
 						headers: {
 							Authorization: `Bearer ${this.userId}`,
@@ -178,16 +238,24 @@ export default {
 					}
 				);
 				this.$emit("updateMessages", message, "delete");
+				this.$root.showToast(
+					"Messaggio eliminato con successo",
+					"success"
+				);
 			} catch (err) {
 				console.error("Errore durante la cancellazione:", err);
+				this.handleError(err);
 			}
 		},
 
+		/* Riceve l'annullamento della cancellazione di un messaggio e chiude il ConfirmDialog */
 		async cancelDeleteMessage() {
 			this.confirmingMessage = null;
 		},
 
-		/* --- Comment Message --- */
+		/* *** Comment Message ***  */
+
+		/* Riceve l'evento di commento e apre il commentPicker nella posizione corretta */
 		openCommentPicker(message, event) {
 			this.activeMessageForComment = message.messageId;
 
@@ -211,6 +279,9 @@ export default {
 			});
 		},
 
+		/* Riceve l'evento da CommentPicker,
+		   invia la richiesta al backend,
+			 inoltra l'evento a ConversationView per aggiornamento locale */
 		async addComment(emoji) {
 			const messageId = this.activeMessageForComment;
 			this.activeMessageForComment = null;
@@ -226,22 +297,18 @@ export default {
 					}
 				);
 
-				// Aggiorno localmente il messaggio
+				// Aggiorno localmente i commenti del messaggio
 				const newComment = res.data;
 				this.$emit("addComment", { messageId, newComment });
 			} catch (err) {
 				console.error("Errore nel salvataggio commento", err);
+				this.handleError(err);
 			}
 		},
 
-		openCommentPopup(comment) {
-			this.$emit("openCommentPopup", comment);
-		},
-
-		closeCommentPopup() {
-			this.$emit("closeCommentPopup");
-		},
-
+		/* Riceve l'evento da CommentPopup,
+			invia la richiesta al backend,
+			inoltra l'evento a ConversationView per aggiornamento locale */
 		async handleDeleteComment(comment) {
 			try {
 				await this.$axios.delete(
@@ -257,29 +324,52 @@ export default {
 				this.$emit("deleteComment", comment);
 			} catch (err) {
 				console.error("Errore nella cancellazione del commento", err);
+				this.handleError(err);
 			}
 		},
 
-		/* --- Forward Message --- */
+		/* Apre il CommentPopup */
+		openCommentPopup(comment) {
+			this.$emit("openCommentPopup", comment);
+		},
+
+		/* Chiude il CommentPopup */
+		closeCommentPopup() {
+			this.$emit("closeCommentPopup");
+		},
+
+		/* *** Forward Message ***  */
+
+		/* Riceve l'evento di inoltro e apre ForwardPopup  */
 		async handleForward(message) {
 			this.forwardingMessage = message;
 		},
 
-		/* --- Reply Message --- */
+		/* Riceve l'evento da ForwardPopup e lo inoltra a ConversationView Per aggiornamento locale */
+		messageForwarded() {
+			this.forwardingMessage = null;
+			this.$emit("messageForwarded");
+		},
+
+		/* *** Reply Message *** */
+
+		/* Riceve l'evento di risposta e modifica MessageInput  */
 		handleReply(message) {
 			this.replyingToMessage = message;
 		},
 
+		/* Riceve l'evento da MessageInput e lo modifica  */
 		clearReply() {
 			this.replyingToMessage = null;
 		},
 
 		/* -------------- GESTIONE GRUPPI -------------- */
 
+		/* Rimuove l'utente corrente dal gruppo (se era l'ultimo, pusha alla Home */
 		async leaveGroup() {
 			try {
 				await this.$axios.delete(
-					`/conversations/${this.conversationId}/leave`,
+					`/conversation-members/${this.conversationId}/me`,
 					{
 						headers: {
 							Authorization: `Bearer ${this.userId}`,
@@ -299,14 +389,16 @@ export default {
 				}
 			} catch (err) {
 				console.error("Errore nell'abbandono del gruppo", err);
+				this.handleError(err);
 			}
 		},
 
+		/* Aggiunge una serie di utenti al gruppo e inoltra a ConversationView per update locale */
 		async addMembers(newMembers) {
 			for (const member of newMembers) {
 				try {
 					await this.$axios.post(
-						`/conversations/${this.conversationId}/add`,
+						`/conversation-add/${this.conversationId}`,
 						{ userId: member.userId },
 						{
 							headers: {
@@ -319,6 +411,7 @@ export default {
 					this.$emit("updateGroupMembers", member);
 				} catch (err) {
 					console.error("Errore nell'inserimento al gruppo", err);
+					this.handleError(err);
 				}
 			}
 			if (newMembers.lenght === 1) {
@@ -328,10 +421,11 @@ export default {
 			}
 		},
 
+		/* Aggiorna il nome del gruppo e inoltra a ConversationView per update locale */
 		async updateGroupName(newName) {
 			try {
 				await this.$axios.put(
-					`/conversations/${this.conversationId}/name`,
+					`/conversation-name/${this.conversationId}`,
 					{ name: newName },
 					{
 						headers: {
@@ -351,13 +445,15 @@ export default {
 					"Errore nell'aggiornamento del nome del gruppo",
 					err
 				);
+				this.handleError(err);
 			}
 		},
 
+		/* Aggiorna la foto del gruppo e inoltra a ConversationView per update locale */
 		async updateGroupPhoto(newPhoto) {
 			try {
 				await this.$axios.put(
-					`/conversations/${this.conversationId}/photo`,
+					`/conversation-photo/${this.conversationId}`,
 					{ photo: newPhoto },
 					{
 						headers: {
@@ -378,6 +474,7 @@ export default {
 					"Errore nell'aggiornamento della foto del gruppo",
 					err
 				);
+				this.handleError(err);
 			}
 		},
 	},

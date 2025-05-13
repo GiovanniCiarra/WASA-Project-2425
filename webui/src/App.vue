@@ -1,14 +1,21 @@
 <template>
+	<!-- Toast per messaggi di errore, warning, successo -->
 	<MessageToast :message="toastMessage" :type="toastType" />
+
 	<div class="background">
-		<div class="app-container">
-			<!-- Sidebar visibile ovunque tranne nella Login -->
-			<Sidebar v-if="$route.name !== 'Login'" />
+		<!-- Sidebar visibile ovunque tranne nella Login -->
+		<div v-if="$route.name !== 'Login'" class="app-container">
+			<Sidebar />
 
 			<!-- Spazio per tutte le view dinamiche -->
 			<main class="main-content">
 				<RouterView />
 			</main>
+		</div>
+
+		<!-- Se il LoginView, ho un contenitore diverso -->
+		<div v-else class="login-container">
+			<RouterView />
 		</div>
 	</div>
 </template>
@@ -31,6 +38,7 @@ export default {
 	},
 
 	methods: {
+		// Metodo per mostrare un toast
 		showToast(msg, type) {
 			this.toastMessage = "";
 			this.$nextTick(() => {
@@ -45,27 +53,15 @@ export default {
 <style>
 .background {
 	background-image: url("../src/assets/images/sfondo.jpg");
-	background-size: cover; /* Ritaglia e adatta l’immagine al contenitore */
-	background-position: center; /* Centra l’immagine */
-	background-repeat: no-repeat; /* Non ripete l’immagine */
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
 	width: 100%;
-	height: 100vh; /* altezza 100% viewport */
+	height: 100vh;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	overflow: hidden;
-	/*background: repeating-linear-gradient(
-		45deg,
-		#008080,
-		#008080 10px,
-		#20b2aa 10px,
-		#20b2aa 20px
-	);
-	min-height: 100vh;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	overflow: hidden;*/
 }
 
 .app-container {
@@ -83,5 +79,13 @@ export default {
 	flex-grow: 1;
 	height: 100%;
 	overflow: hidden;
+}
+
+.login-container {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 </style>

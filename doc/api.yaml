@@ -59,12 +59,12 @@ components:
           minLength: 3
           maxLength: 16
         photo:
-          description: The user's photo
+          description: the user's photo, a Base64-encoded PNG image (data URI format)
           type: string
-          format: byte
-          example: "U3dhZ2dlciByb2Nrcw=="
-          minLength: 0
-          maxLength: 1000
+          pattern: "^data:image/png;base64,[A-Za-z0-9+/=]+$"
+          example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA..."
+          minLength: 30 # Escludo stringhe troppo corte
+          maxLength: 700000 # ~500 KB
 
     conversation:
       title: Conversation
@@ -86,19 +86,19 @@ components:
           minLength: 4
           maxLength: 5
         name:
-          description: The group's name or other user's name
+          description: The conversation's name
           type: string
           pattern: "^(?=.*[a-zA-Z0-9])[a-zA-Z0-9 ]+$"
           example: "gruppo calcetto"
           minLength: 3
           maxLength: 16
         photo:
-          description: The group's photo or other user's photo
+          description: the comversation's photo, a Base64-encoded PNG image (data URI format)
           type: string
-          format: byte
-          example: "U3dhZ2dlciByb2Nrcw=="
-          minLength: 0
-          maxLength: 1000
+          pattern: "^data:image/png;base64,[A-Za-z0-9+/=]+$"
+          example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA..."
+          minLength: 30 # Escludo stringhe troppo corte
+          maxLength: 700000 # ~500 KB
         lastMessage:
           $ref: "#/components/schemas/message"
 
@@ -134,12 +134,12 @@ components:
               example: "Hi, how are you?"
               minLength: 1
               maxLength: 200
-            - description: a photo, body of the message
+            - description: a Base64-encoded PNG image (data URI format), body of the message
               type: string
-              format: byte
-              example: "U3dhZ2dlciByb2Nrcw=="
-              minLength: 0
-              maxLength: 1000
+              pattern: "^data:image/png;base64,[A-Za-z0-9+/=]+$"
+              example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA..."
+              minLength: 30 # Escludo stringhe troppo corte
+              maxLength: 700000 # ~500 KB
         senderId:
           description: The identifier of the sender user
           type: integer
@@ -304,9 +304,9 @@ paths:
     get:
       operationId: getUserProfile
       tags: ["users"]
-      summary: "get user's profile informations"
+      summary: "get user's profile information"
       description: |
-        Returns all the users informations
+        Returns all the users information
       responses:
         "200":
           description: "userId, username, photo"
@@ -377,9 +377,9 @@ paths:
     put:
       operationId: setMyPhoto
       tags: ["users"]
-      summary: "update photo of an existing user"
+      summary: "update photo of the authenticated user"
       description: |
-        Replace the property 'photo' of a specific user
+        Replace the property 'photo' of the authenticated user
         with the one in the requestBody
       requestBody:
         required: true
@@ -408,7 +408,7 @@ paths:
       operationId: getMyConversations
       tags: ["chats"]
       summary: get the conversations of the user
-      description: Return all the non-empty chats of the user
+      description: Returns all conversations (private and group) where the user has at least one message
       responses:
         "200":
           description: list of chats
@@ -448,12 +448,12 @@ paths:
                   minLength: 3
                   maxLength: 16
                 photo:
-                  description: The photo URL of the group (only for groups)
+                  description: Base64-encoded PNG image (data URI format), only for groups
                   type: string
-                  format: byte
-                  example: "U3dhZ2dlciByb2Nrcw=="
-                  minLength: 0
-                  maxLength: 1000 #(1MB)
+                  pattern: "^data:image/png;base64,[A-Za-z0-9+/=]+$"
+                  example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA..."
+                  minLength: 30 # Escludo stringhe troppo corte
+                  maxLength: 700000 # ~500 KB
                 members:
                   description: List of userId for group creation or single for chat
                   type: array
@@ -468,6 +468,7 @@ paths:
           content:
             application/json:
               schema:
+                type: object
                 description: conversationId
                 properties:
                   conversationId:
@@ -494,6 +495,7 @@ paths:
           content:
             application/json:
               schema:
+                type: object
                 description: conversationId
                 properties:
                   conversationId:
@@ -507,7 +509,7 @@ paths:
         "500":
           description: Internal Server Error
 
-  /conversations/{conversationId}:
+  /conversation-info/{conversationId}:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     get:
@@ -515,7 +517,7 @@ paths:
       tags: ["chats"]
       summary: get a specific conversation
       description: |
-        Return a specific conversation of the user with all the messages
+        Returns all messages exchanged in the specified conversation (text or photo, with metadata)
       responses:
         "200":
           description: return the list of the messages of a specific conversation
@@ -535,12 +537,15 @@ paths:
         "500":
           description: Internal Server Error
 
+  /conversation-delete/{conversationId}:
+    parameters:
+      - $ref: "#/components/parameters/conversationId"
     delete:
       operationId: deleteConversation
       tags: ["chats"]
       summary: delete a specific conversation
       description: |
-        delete a specific conversation of the user with all the messages
+        delete the specified conversation of the user with all the messages
       responses:
         "204":
           description: the conversation is deleted successfully
@@ -551,7 +556,7 @@ paths:
         "500":
           description: Internal Server Error
 
-  /conversations/{conversationId}/messages:
+  /conversation-messages/{conversationId}:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     post:
@@ -589,7 +594,7 @@ paths:
         "500":
           description: Internal Server Error
 
-  /messages/{messageId}/forward:
+  /messages/{messageId}/forwards:
     parameters:
       - $ref: "#/components/parameters/messageId"
     post:
@@ -603,7 +608,7 @@ paths:
         content:
           application/json:
             schema:
-              description: conversationId
+              description: conversationId of the conversation where the message will be forwarded
               type: object
               properties:
                 targetChatId:
@@ -626,7 +631,7 @@ paths:
         "500":
           description: internal Server Error
 
-  /messages/{messageId}/reply:
+  /messages/{messageId}/replies:
     parameters:
       - $ref: "#/components/parameters/messageId"
     post:
@@ -649,7 +654,7 @@ paths:
                   $ref: "#/components/schemas/message/properties/type"
       responses:
         "201":
-          description: the message is replayed succesfully and a new message is created
+          description: the message is replied succesfully and a new message is created
           content:
             application/json:
               schema:
@@ -663,7 +668,7 @@ paths:
         "500":
           description: internal Server Error
 
-  /conversations/{conversationId}/messages/{messageId}:
+  /conversation-messages/{conversationId}/{messageId}:
     parameters:
       - $ref: "#/components/parameters/conversationId"
       - $ref: "#/components/parameters/messageId"
@@ -672,7 +677,7 @@ paths:
       tags: ["chats"]
       summary: delete a message
       description: |
-        delete a message from a conversation
+        Deletes a message sent by the user. If it was the last message in the conversation, the conversation is also deleted.
       responses:
         "204":
           description: The message is deleted succesfully
@@ -708,7 +713,7 @@ paths:
                   pattern: "^.*?$"
                   example: "\u2764\uFE0F"
                   minLength: 1
-                  maxLength: 50
+                  maxLength: 100
               required:
                 - content
       responses:
@@ -746,7 +751,7 @@ paths:
         "500":
           description: internal Server Error
 
-  /conversations/{conversationId}/members:
+  /conversation-members/{conversationId}:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     get:
@@ -757,7 +762,7 @@ paths:
         return all the members of the conversation
       responses:
         "200":
-          description: return all the members of the conversastion
+          description: return all the members of the conversation
           content:
             application/json:
               schema:
@@ -774,7 +779,7 @@ paths:
         "500":
           description: internal Server Error
 
-  /conversations/{conversationId}/add:
+  /conversation-add/{conversationId}:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     post:
@@ -809,7 +814,7 @@ paths:
         "500":
           description: internal Server Error
 
-  /conversations/{conversationId}/leave:
+  /conversation-members/{conversationId}/me:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     delete:
@@ -830,7 +835,7 @@ paths:
         "500":
           description: internal Server Error
 
-  /conversations/{conversationId}/name:
+  /conversation-name/{conversationId}:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     put:
@@ -838,7 +843,7 @@ paths:
       tags: ["groups"]
       summary: set the name of the group
       description: |
-        The name of the specific group is setted with the 
+        The name of the specific group is set with the 
         string passed in the requestBody
       requestBody:
         required: true
@@ -864,7 +869,7 @@ paths:
         "500":
           description: internal Server Error
 
-  /conversations/{conversationId}/photo:
+  /conversation-photo/{conversationId}:
     parameters:
       - $ref: "#/components/parameters/conversationId"
     put:
@@ -879,7 +884,7 @@ paths:
         content:
           application/json:
             schema:
-              description: object representing a group photo (url)
+              description: Base64-encoded PNG image in data URI format
               type: object
               properties:
                 photo:

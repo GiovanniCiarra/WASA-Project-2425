@@ -8,6 +8,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// deleteMessage deletes a message from the given conversation if the user is its owner.
+// If the conversation becomes empty after the deletion, it is deleted.
+
 func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -82,7 +85,7 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 		err = rt.db.DeleteConversation(conversationId)
 		if err != nil {
 			ctx.Logger.WithError(err).Error("Failed to delete conversation")
-			http.Error(writer, "Failed tocreate conversation", http.StatusInternalServerError)
+			http.Error(writer, "Failed to delete conversation", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -92,6 +95,6 @@ func (rt *_router) deleteMessage(writer http.ResponseWriter, reader *http.Reques
 
 	ctx.Logger.Infof("message %d is deleted successfully", messageId)
 	if !hasMessages {
-		ctx.Logger.Infof("conversation %d is deleted succesfully because empty", conversationId)
+		ctx.Logger.Infof("conversation %d is deleted successfully because empty", conversationId)
 	}
 }

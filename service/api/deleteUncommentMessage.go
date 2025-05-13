@@ -8,6 +8,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// deleteUncommentMessage removes the current user's comment from the specified message,
+// only if the user has previously added one.
+
 func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -43,7 +46,7 @@ func (rt *_router) deleteUncommentMessage(writer http.ResponseWriter, reader *ht
 	// Controllo che il commento esista e sia dell'utente
 	hasCommented, err := rt.db.HasUserCommentedMessage(userId, messageId)
 	if err != nil {
-		ctx.Logger.WithError(err).Error("Database error while checking comment existane")
+		ctx.Logger.WithError(err).Error("Database error while checking comment existance")
 		http.Error(writer, "Database error while checking comment existance", http.StatusInternalServerError)
 		return
 	}

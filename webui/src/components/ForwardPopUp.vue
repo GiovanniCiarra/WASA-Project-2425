@@ -78,6 +78,7 @@ export default {
 			const res = await this.$axios.get("/users", {
 				headers: { Authorization: `Bearer ${this.userId}` },
 			});
+
 			this.users = res.data;
 		} catch (err) {
 			console.error("Errore nel recupero degli utenti", err);
@@ -88,7 +89,7 @@ export default {
 		async forwardToConversation(targetConv) {
 			try {
 				await this.$axios.post(
-					`/messages/${this.message.messageId}/forward`,
+					`/messages/${this.message.messageId}/forwards`,
 					{
 						targetChatId: targetConv.conversationId,
 					},
@@ -107,6 +108,7 @@ export default {
 				});
 			} catch (err) {
 				console.error("Errore durante inoltro", err);
+				this.handleError(err);
 			}
 		},
 
@@ -125,7 +127,7 @@ export default {
 
 				try {
 					await this.$axios.post(
-						`/messages/${this.message.messageId}/forward`,
+						`/messages/${this.message.messageId}/forwards`,
 						{
 							targetChatId: conversationId,
 						},
@@ -144,13 +146,14 @@ export default {
 					});
 				} catch (err) {
 					console.error("Errore durante inoltro", err);
+					this.handleError(err);
 				}
 			} catch (err) {
 				if (err.response && err.response.status === 404) {
 					// Se la conversazione non esiste, ricevo un error 404, allora la creo, inoltro il messaggio e cambio view
 					try {
 						const createRes = await this.$axios.post(
-							"/conversations",
+							"/conversations/create",
 							{
 								name: "",
 								photo: "",
@@ -167,7 +170,7 @@ export default {
 
 						try {
 							await this.$axios.post(
-								`/messages/${this.message.messageId}/forward`,
+								`/messages/${this.message.messageId}/forwards`,
 								{
 									targetChatId: conversationId,
 								},
@@ -188,27 +191,56 @@ export default {
 							});
 						} catch (err) {
 							console.error("Errore durante inoltro", err);
+							this.handleError(err);
 						}
-						this.$router.push({
-							path: `/conversations/${conversationId}`,
-							query: {
-								type: "chat",
-								name: targetUser.username,
-								photo: targetUser.photo,
-							},
-						});
 					} catch (err) {
 						console.error(
 							"Errore nella creazione della conversazione",
 							err
 						);
+						this.handleError(err);
 					}
 				} else {
 					console.error(
 						"Errore nella creazione/recupero conversazione",
 						err
 					);
+					this.handleError(err);
 				}
+			}
+		},
+
+		handleError(err) {
+			if (!err.response) {
+				this.$root.showToast(
+					"Errore di rete: controlla la connessione.",
+					"error"
+				);
+				return;
+			}
+
+			const status = err.response.status;
+			const detail = err.response.data || "ERRORE";
+
+			switch (status) {
+				case 400:
+					this.$root.showToast(`Errore 400: ${detail}`, "error");
+					break;
+				case 401:
+					this.$root.showToast(
+						"Errore 401: Non autorizzato, effettua di nuovo il login",
+						"error"
+					);
+					this.$router.push("/Login");
+					break;
+				case 403:
+					this.$root.showToast(`Errore 403: ${detail}`, "error");
+					break;
+				case 500:
+					this.$root.showToast(`Errore 500:\n ${detail}!`, "error");
+					break;
+				default:
+					this.$root.showToast("Errore sconosciuto", "error");
 			}
 		},
 	},

@@ -9,6 +9,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// postAddToGroup adds a specified user to a group conversation,
+// only if the caller is a member and the target user is not already included.
+
 func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -119,5 +122,5 @@ func (rt *_router) postAddToGroup(writer http.ResponseWriter, reader *http.Reque
 	writer.WriteHeader(http.StatusNoContent)
 
 	// Scrivo il successo nel logger
-	ctx.Logger.Infof("user %d is added successfully to coversation %d", requestBody.NewUserId, conversationId)
+	ctx.Logger.Infof("user %d is added successfully to conversation %d", requestBody.NewUserId, conversationId)
 }

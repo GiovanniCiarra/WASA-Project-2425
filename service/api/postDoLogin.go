@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 )
+
+// postDoLogin performs simplified login. If the username exists, the user is logged in;
+// otherwise, the user is created and logged in. Returns the user ID as identifier.
 
 func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request, _ httprouter.Params, ctx reqcontext.RequestContext) {
 
@@ -26,10 +28,10 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 		return
 	}
 
-	// Controllo la validità dello username (compreso tra 3 e 16 caratteri e contenete caratteri alfanumerici(non solo spazi))
+	// Controllo la validità dello username (compreso tra 3 e 16 caratteri e contenente caratteri alfanumerici(non solo spazi))
 	if !isValidName(requestBody.Name) {
-		ctx.Logger.WithError(err).Error("Invalid name")
-		http.Error(writer, "Invalid name", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Invalid username")
+		http.Error(writer, "Invalid username", http.StatusBadRequest)
 		return
 	}
 
@@ -59,7 +61,6 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 	}{Identifier: userId}
 
 	writer.Header().Set("content-type", "application/json")
-	writer.Header().Set("Autenthication", fmt.Sprintf("bearerAuth: %d", userId))
 	writer.WriteHeader(httpStatusResult)
 
 	encoder := json.NewEncoder(writer)
@@ -71,6 +72,6 @@ func (rt *_router) postDoLogin(writer http.ResponseWriter, reader *http.Request,
 	}
 
 	// Scrivo il successo del Login nel logger
-	ctx.Logger.Infof("Login Succesfull: %s", requestBody.Name)
+	ctx.Logger.Infof("Login Succesful: %s", requestBody.Name)
 
 }

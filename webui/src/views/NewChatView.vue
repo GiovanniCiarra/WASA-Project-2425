@@ -89,7 +89,7 @@ export default {
 					// Se la conversazione non esiste, ricevo un error 404, allora la creo
 					try {
 						const createRes = await this.$axios.post(
-							"/conversations",
+							"/conversations/create",
 							{
 								name: "",
 								photo: "",
@@ -116,13 +116,43 @@ export default {
 							"Errore nella creazione della conversazione",
 							err
 						);
+						this.handleError(err);
 					}
 				} else {
-					console.error(
-						"Errore nella creazione/recupero conversazione",
-						err
-					);
+					console.error("Errore nel recupero conversazione", err);
+					this.handleError(err);
 				}
+			}
+		},
+
+		handleError(err) {
+			if (!err.response) {
+				this.$root.showToast(
+					"Errore di rete: controlla la connessione.",
+					"error"
+				);
+				return;
+			}
+
+			const status = err.response.status;
+			const detail = err.response.data || "ERRORE";
+
+			switch (status) {
+				case 400:
+					this.$root.showToast(`Errore 400: ${detail}`, "error");
+					break;
+				case 401:
+					this.$root.showToast(
+						"Errore 401: Non autorizzato, effettua di nuovo il login",
+						"error"
+					);
+					this.$router.push("/Login");
+					break;
+				case 500:
+					this.$root.showToast(`Errore 500:\n ${detail}!`, "error");
+					break;
+				default:
+					this.$root.showToast("Errore sconosciuto", "error");
 			}
 		},
 	},

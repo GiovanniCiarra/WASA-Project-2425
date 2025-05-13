@@ -1,8 +1,19 @@
 <template>
-	<div v-if="replyingTo" class="reply-preview">
-		Rispondi a: {{ replyingTo.senderUsername }} → {{ replyingTo.content }}
-		<button @click="$emit('cancelReply')">
-			<img :src="closeIcon" alt="close" />
+	<div v-if="replyingTo" class="reply-preview-block">
+		<div class="reply-block">
+			<strong>{{ replyingTo.senderUsername }}</strong>
+			<div class="reply-content">
+				<span v-if="replyingTo.type === 'text'">
+					{{ replyingTo.content }}
+				</span>
+				<span v-else class="snippet-with-icon">
+					<img :src="imageSnippet" alt="Foto" class="snippet-icon" />
+					<span>Image</span>
+				</span>
+			</div>
+		</div>
+		<button class="cancel-reply-btn" @click="$emit('cancelReply')">
+			<img :src="closeIcon" alt="Annulla" />
 		</button>
 	</div>
 
@@ -46,6 +57,7 @@
 
 <script>
 import closeIcon from "../assets/icons/close.png";
+import imageSnippet from "../assets/icons/image-snippet.png";
 
 export default {
 	props: {
@@ -64,6 +76,7 @@ export default {
 			userId: null,
 			selectedImage: null,
 			closeIcon,
+			imageSnippet,
 		};
 	},
 
@@ -112,7 +125,7 @@ export default {
 		async sendMessage(content, type) {
 			try {
 				const res = await this.$axios.post(
-					`/conversations/${this.conversationId}/messages`,
+					`/conversation-messages/${this.conversationId}`,
 					{
 						content: content,
 						type: type,
@@ -124,13 +137,14 @@ export default {
 				this.$emit("messageSent", res.data);
 			} catch (err) {
 				console.error("Errore nell'invio messaggio", err);
+				this.handleError(err);
 			}
 		},
 
 		async replyMessage(content, type) {
 			try {
 				const res = await this.$axios.post(
-					`/messages/${this.replyingTo.messageId}/reply`,
+					`/messages/${this.replyingTo.messageId}/replies`,
 					{
 						content: content,
 						type: type,
@@ -143,6 +157,41 @@ export default {
 				this.$emit("messageSent", res.data);
 			} catch (err) {
 				console.error("Errore nell'invio messaggio", err);
+				this.handleError(err);
+			}
+		},
+
+		handleError(err) {
+			if (!err.response) {
+				this.$root.showToast(
+					"Errore di rete: controlla la connessione.",
+					"error"
+				);
+				return;
+			}
+
+			const status = err.response.status;
+			const detail = err.response.data || "ERRORE";
+
+			switch (status) {
+				case 400:
+					this.$root.showToast(`Errore 400: ${detail}`, "error");
+					break;
+				case 401:
+					this.$root.showToast(
+						"Errore 401: Non autorizzato, effettua di nuovo il login",
+						"error"
+					);
+					this.$router.push("/Login");
+					break;
+				case 403:
+					this.$root.showToast(`Errore 403: ${detail}`, "error");
+					break;
+				case 500:
+					this.$root.showToast(`Errore 500:\n ${detail}!`, "error");
+					break;
+				default:
+					this.$root.showToast("Errore sconosciuto", "error");
 			}
 		},
 	},
@@ -216,21 +265,21 @@ export default {
 	color: #008080;
 }
 
-.reply-preview {
+.reply-preview-block {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	background-color: #e0f7fa;
 	border-left: 4px solid #26c6da;
-	padding: 8px 12px;
+	padding: 6px 10px;
 	margin: 0 20px 8px 20px;
 	border-radius: 8px;
-	font-size: 0.9rem;
+	font-size: 0.85rem;
 	color: #333;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.reply-preview button {
+.cancel-reply-btn {
 	background: none;
 	border: none;
 	cursor: pointer;
@@ -239,7 +288,37 @@ export default {
 	margin-left: 8px;
 }
 
-.reply-preview button:hover {
+.cancel-reply-btn:hover {
 	color: #d32f2f;
+}
+
+.reply-preview-block .reply-block {
+	background: none;
+	border: none;
+	padding: 0;
+	margin: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.reply-content {
+	margin-top: 4px;
+	font-style: italic;
+	font-size: 0.8rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 400px;
+}
+
+.snippet-with-icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.snippet-icon {
+	width: 16px;
+	height: 16px;
 }
 </style>

@@ -9,6 +9,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// putSetGroupName updates the name of a group conversation.
+// It checks that the conversation is a group and that the user is a member.
+
 func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -50,7 +53,7 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 	}
 
 	if !isGroup {
-		http.Error(writer, "Cannot rename a privat chat", http.StatusBadRequest)
+		http.Error(writer, "Cannot rename a private chat", http.StatusBadRequest)
 		ctx.Logger.Error("Cannot rename a private chat")
 		return
 	}
@@ -69,7 +72,7 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	// Decodifico al richiesta
+	// Decodifico la richiesta
 	var requestBody struct {
 		Name string `json:"name"`
 	}
@@ -80,7 +83,7 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	// Controllo la validità del nuovo nome (compreso tra 3 e 16 caratteri e contenete caratteri alfanumerici(non solo spazi))
+	// Controllo la validità del nuovo nome (compreso tra 3 e 16 caratteri e contenente caratteri alfanumerici(non solo spazi))
 	if !isValidName(requestBody.Name) {
 		ctx.Logger.WithError(err).Error("Invalid name")
 		http.Error(writer, "Invalid name", http.StatusBadRequest)
@@ -95,8 +98,8 @@ func (rt *_router) putSetGroupName(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	// Scrivo la risposta di successoS
+	// Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
-	ctx.Logger.Infof("group's name is updated succesfully: %s", requestBody.Name)
+	ctx.Logger.Infof("group's name is updated successfully: %s", requestBody.Name)
 }

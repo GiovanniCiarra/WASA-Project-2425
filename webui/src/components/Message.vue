@@ -30,12 +30,24 @@
 					v-if="message.isReply && message.isReply !== -1"
 					class="reply-block"
 				>
-					<strong>{{ message.replyTo.senderUsername }}</strong>
-					<div class="reply-content">
-						<span v-if="message.replyTo.type === 'text'">{{
-							message.replyTo.content
-						}}</span>
-						<span v-else>[Immagine]</span>
+					<div v-if="message.replyTo.deleted">
+						<em>Messaggio eliminato</em>
+					</div>
+					<div v-else>
+						<strong>{{ message.replyTo.senderUsername }}</strong>
+						<div class="reply-content">
+							<span v-if="message.replyTo.type === 'text'">{{
+								message.replyTo.content
+							}}</span>
+							<span v-else class="snippet-with-icon">
+								<img
+									:src="imageSnippet"
+									alt="Foto"
+									class="snippet-icon"
+								/>
+								<span>Image</span>
+							</span>
+						</div>
 					</div>
 				</div>
 
@@ -188,6 +200,7 @@ import forwarded from "../assets/icons/forwarded.png";
 import checkGray from "../assets/icons/checkGray.png";
 import checkBlue from "../assets/icons/checkBlue.png";
 import closeActions from "../assets/icons/close.png";
+import imageSnippet from "../assets/icons/image-snippet.png";
 
 export default {
 	data() {
@@ -209,6 +222,7 @@ export default {
 			checkGray,
 			checkBlue,
 			closeActions,
+			imageSnippet,
 			showActions: false,
 		};
 	},
@@ -249,7 +263,7 @@ export default {
 	mounted() {
 		document.addEventListener("click", this.closeActionsMenu);
 	},
-	beforeDestroy() {
+	beforeUnmount() {
 		document.removeEventListener("click", this.closeActionsMenu);
 	},
 	methods: {
@@ -532,5 +546,16 @@ export default {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+.snippet-with-icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px; /* spazio tra icona e testo */
+}
+
+.snippet-icon {
+	width: 16px;
+	height: 16px;
 }
 </style>

@@ -53,6 +53,7 @@
 			@openCloseConversationInfo="
 				conversationInfoOpen = !conversationInfoOpen
 			"
+			@messageForwarded="messageForwarded"
 		/>
 	</div>
 </template>
@@ -81,10 +82,12 @@ export default {
 		};
 	},
 	computed: {
+		// Recupero il conversationId dai route params
 		conversationId() {
 			return Number(this.$route.params.conversationId);
 		},
 
+		//Filtro per le conversazioni visibili
 		filteredConversations() {
 			if (this.conversations) {
 				return this.conversations.filter((conv) =>
@@ -97,6 +100,7 @@ export default {
 	},
 
 	watch: {
+		// Se il conversationId cambia, eseguo un refetch e aggiorno le variabili nella query
 		"$route.params.conversationId": {
 			async handler(newId, oldId) {
 				if (oldId && oldId !== newId) {
@@ -111,6 +115,8 @@ export default {
 					}
 					this.fetchConversations();
 					await this.fetchMessages();
+
+					// Dopo il fetchMessage iniziale faccio uno scroll in basso
 					this.$nextTick(() => {
 						if (
 							this.$refs.conversationWindow &&
@@ -125,7 +131,11 @@ export default {
 	},
 
 	mounted() {
+		// Eseguo il fetch di conversazioni, messaggi e memebri
 		this.userId = sessionStorage.getItem("userId");
+		if (!this.userId) {
+			this.$router.push("/Login");
+		}
 		this.fetchConversations();
 		if (this.conversationType === "group") {
 			this.fetchMembers();
@@ -142,18 +152,18 @@ export default {
 		});
 
 		// Avvio il polling per il fetch dei membri, conversazioni, messaggi e controllo dell'esistenza
-		this.pollingInterval = setInterval(() => {
+		this.pollingInterval = setInterval(async () => {
 			if (this.conversationType === "group") {
-				this.fetchMembers();
+				await this.fetchMembers();
 			}
-			this.fetchMessages();
-			this.fetchConversations();
+			await this.fetchMessages();
+			await this.fetchConversations();
 			this.checkConversationInfoUpdates(this.conversations);
 			this.checkConversationExistance();
 		}, 5000);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.clearPolling();
 	},
 
@@ -174,13 +184,14 @@ export default {
 				this.conversations = res.data;
 			} catch (err) {
 				console.error("Errore nel caricamento conversazioni", err);
+				this.handleError(err);
 			}
 		},
 
 		async fetchMessages() {
 			try {
 				const res = await this.$axios.get(
-					`/conversations/${this.conversationId}`,
+					`/conversation-info/${this.conversationId}`,
 					{
 						headers: {
 							Authorization: `Bearer ${this.userId}`,
@@ -193,13 +204,14 @@ export default {
 				}
 			} catch (err) {
 				console.error("Errore nel caricamento dei messaggi", err);
+				this.handleError(err);
 			}
 		},
 
 		async fetchMembers() {
 			try {
 				const res = await this.$axios.get(
-					`/conversations/${this.conversationId}/members`,
+					`/conversation-members/${this.conversationId}`,
 					{
 						headers: {
 							Authorization: `Bearer ${this.userId}`,
@@ -214,20 +226,23 @@ export default {
 					"errore nel caricamento dei membri della conversazione",
 					err
 				);
+				this.handleError(err);
 			}
 		},
 
 		/* -------------- UTILITY -------------- */
 
+		// Controllo periodico se una conversazione è stata eliminata a causa di azioni di altri utenti
 		checkConversationExistance() {
 			if (
 				!this.conversationId ||
 				isNaN(this.conversationId) ||
 				this.conversationId === 0
-			)
+			) {
 				return;
+			}
 
-			if (!this.conversations) {
+			if (!this.conversations || this.conversations.length === 0) {
 				this.clearPolling();
 				this.$root.showToast(
 					"Conversazione eliminata perché senza messaggi!",
@@ -240,23 +255,19 @@ export default {
 			const conv = this.conversations.find(
 				(c) => c.conversationId === this.conversationId
 			);
-			if (
-				!conv &&
-				this.$route.name === "Conversation" &&
-				this.messageSent
-			) {
+			if (!conv && this.$route.name === "Conversation") {
 				this.clearPolling();
 				this.$root.showToast(
 					"Conversazione eliminata perché senza messaggi!",
 					"warning"
 				);
 				this.$router.push("/Home");
-			} else {
-				return;
 			}
 		},
 
+		// Controllo periodico se l'altro utente (o membro del gruppo) ha modificato le info (name e photo)
 		checkConversationInfoUpdates(conversations) {
+			if (!conversations || conversations.length === 0) return;
 			for (const conv of conversations) {
 				if (conv.conversationId === this.conversationId) {
 					if (conv.name != this.conversationName)
@@ -267,11 +278,12 @@ export default {
 			}
 		},
 
+		// Elimino le conversazioni senza messaggi
 		async deleteEmptyConversation(conversationId) {
 			if (!this.messageSent) {
 				try {
 					await this.$axios.delete(
-						`/conversations/${conversationId}`,
+						`/conversation-delete/${conversationId}`,
 						{
 							headers: { Authorization: `Bearer ${this.userId}` },
 						}
@@ -285,6 +297,7 @@ export default {
 						"Errore nella cancellazione conversazione",
 						err
 					);
+					this.handleError(err);
 				}
 			}
 		},
@@ -296,34 +309,41 @@ export default {
 			}
 		},
 
-		/* -------------- GESTIONE GRUPPI -------------- */
+		// Gestore degli errori
+		handleError(err) {
+			if (!err.response) {
+				this.$root.showToast(
+					"Errore di rete: controlla la connessione.",
+					"error"
+				);
+				return;
+			}
 
-		updateGroupName(newName) {
-			this.conversationName = newName;
-			this.$router.replace({
-				query: {
-					...this.$route.query,
-					name: newName,
-				},
-			});
-			this.fetchConversations();
+			const status = err.response.status;
+			const detail = err.response.data || "ERRORE";
+
+			switch (status) {
+				case 400:
+					this.$root.showToast(`Errore 400: ${detail}`, "error");
+					break;
+				case 401:
+					this.$root.showToast(
+						"Errore 401: Non autorizzato, effettua di nuovo il login",
+						"error"
+					);
+					this.$router.push("/Login");
+					break;
+				case 500:
+					this.$root.showToast(`Errore 500:\n ${detail}!`, "error");
+					break;
+				default:
+					this.$root.showToast("Errore sconosciuto", "error");
+			}
 		},
 
-		updateGroupPhoto(newPhoto) {
-			this.conversationPhoto = newPhoto;
-			this.$router.replace({
-				query: {
-					...this.$route.query,
-					photo: newPhoto,
-				},
-			});
-			this.fetchConversations();
-		},
+		/* -------------- GESTIONE MESSAGGI -------------- */
 
-		updateGroupMembers(newMember) {
-			this.members.push(newMember);
-		},
-
+		/* Aggiorno localmente la lista dei messaggi della conversazione (add or delete) */
 		updateMessages(message, flag) {
 			if (flag === "add") {
 				this.messageSent = true;
@@ -350,8 +370,44 @@ export default {
 			}
 		},
 
+		/* -------------- GESTIONE GRUPPI -------------- */
+
+		/* Aggiorno localmente il nome di un gruppo */
+		updateGroupName(newName) {
+			this.conversationName = newName;
+			this.$router.replace({
+				query: {
+					...this.$route.query,
+					name: newName,
+				},
+			});
+
+			// Refetch per update immediato
+			this.fetchConversations();
+		},
+
+		/* Aggiorno localmente la foto di un gruppo */
+		updateGroupPhoto(newPhoto) {
+			this.conversationPhoto = newPhoto;
+			this.$router.replace({
+				query: {
+					...this.$route.query,
+					photo: newPhoto,
+				},
+			});
+
+			// Refetch per update immediato
+			this.fetchConversations();
+		},
+
+		/* Aggiorno localmente i membri di un gruppo */
+		updateGroupMembers(newMember) {
+			this.members.push(newMember);
+		},
+
 		/* -------------- GESTIONE COMMENTI -------------- */
 
+		/* Aggiunge un commento localmente */
 		addComment({ messageId, newComment }) {
 			const msg = this.messages.find((m) => m.messageId === messageId);
 			if (msg) {
@@ -360,6 +416,7 @@ export default {
 			}
 		},
 
+		/* Rimuove un commento localmente */
 		deleteComment(comment) {
 			this.commentPopupMessage.comments =
 				this.commentPopupMessage.comments.filter(
@@ -372,6 +429,7 @@ export default {
 			this.fetchMessages();
 		},
 
+		/* Apre il popup contenente i commenti del messaggio */
 		openCommentPopup(comment) {
 			const message = this.messages.find(
 				(m) => m.messageId === comment.messageId
@@ -382,8 +440,24 @@ export default {
 			}
 		},
 
+		/* Chiude il popup contenente i commenti del messaggio */
 		closeCommentPopup() {
 			this.commentPopupMessage = null;
+		},
+
+		/* -------------- GESTIONE FORWARD -------------- */
+
+		/* Refetch e scroll quando viene effettuato il forward, per evitare ritardi */
+		messageForwarded() {
+			this.fetchMessages();
+			setTimeout(() => {
+				if (
+					this.$refs.conversationWindow &&
+					this.$refs.conversationWindow.scrollToBottom
+				) {
+					this.$refs.conversationWindow.scrollToBottom();
+				}
+			}, 100);
 		},
 	},
 };

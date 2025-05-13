@@ -3,15 +3,16 @@ package api
 import (
 	"Progetto/service/api/reqcontext"
 	"Progetto/service/database"
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
+
+// postSendMessage adds a new message (text or photo) to the specified conversation.
+// It verifies the sender’s identity and membership, validates the content, and returns the saved message.
 
 func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
@@ -64,34 +65,17 @@ func (rt *_router) postSendMessage(writer http.ResponseWriter, reader *http.Requ
 		return
 	}
 
-	//Se un immagine, controllo che sia in base64 e non troppo pesante
+	// Se un immagine, controllo che sia in base64 e non troppo pesante
 	if requestBody.Type == "photo" {
-		if !strings.HasPrefix(requestBody.Content, "data:image/png") {
-			http.Error(writer, "Invalid image Format", http.StatusBadRequest)
-			ctx.Logger.WithError(err).Error("Invalid image Format")
-			return
-		}
+		validImage := validateBase64Image(requestBody.Content)
 
-		parts := strings.SplitN(requestBody.Content, ",", 2)
-		if len(parts) != 2 {
-			http.Error(writer, "invalid base64 format", http.StatusBadRequest)
-			ctx.Logger.WithError(err).Error("Invalid base64 Format")
-			return
-		}
-
-		data, err := base64.StdEncoding.DecodeString(parts[1])
-		if err != nil {
-			http.Error(writer, "invalid base64 encoding", http.StatusBadRequest)
-			ctx.Logger.WithError(err).Error("Invalid base64 encoding")
-			return
-		}
-
-		if len(data) > 500*1024 {
-			http.Error(writer, "image too large", http.StatusBadRequest)
-			ctx.Logger.WithError(err).Error("Image too large")
+		if !validImage {
+			http.Error(writer, "Invalid Image", http.StatusBadRequest)
+			ctx.Logger.WithError(err).Error("Invalid Image")
 			return
 		}
 	}
+
 	// Controllo che l'utente partecipi alla conversazione
 	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
 	if err != nil {

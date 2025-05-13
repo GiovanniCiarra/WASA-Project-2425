@@ -19,12 +19,14 @@
 			<div class="conversation-snippet">
 				<template v-if="conversation.lastMessage">
 					<template v-if="conversation.lastMessage.type === 'photo'">
-						<img
-							src="@/assets/icons/image-snippet.png"
-							alt="Foto"
-							class="snippet-icon"
-						/>
-						Image
+						<span class="snippet-with-icon">
+							<img
+								:src="imageSnippet"
+								alt="Foto"
+								class="snippet-icon"
+							/>
+							<span>Image</span>
+						</span>
 					</template>
 					<template v-else>
 						{{ conversation.lastMessage.content }}
@@ -39,6 +41,7 @@
 <script>
 import defaultGroupPhoto from "../assets/images/default-group-48.png";
 import defaultUserPhoto from "../assets/images/default-user-48.png";
+import imageSnippet from "../assets/icons/image-snippet.png";
 
 export default {
 	props: {
@@ -50,6 +53,7 @@ export default {
 		return {
 			defaultGroupPhoto,
 			defaultUserPhoto,
+			imageSnippet,
 		};
 	},
 };
@@ -103,6 +107,17 @@ export default {
 	height: 16px;
 	margin-right: 2px;
 	vertical-align: middle;
+}
+
+.snippet-with-icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.snippet-icon {
+	width: 16px;
+	height: 16px;
 }
 
 .selected {

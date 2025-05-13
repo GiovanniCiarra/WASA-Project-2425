@@ -2,14 +2,15 @@ package api
 
 import (
 	"Progetto/service/api/reqcontext"
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
+
+// putSetGroupPhoto updates the photo of a group conversation.
+// It validates the request and ensures the image is in base64 PNG format.
 
 func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
@@ -52,8 +53,8 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 	}
 
 	if !isGroup {
-		http.Error(writer, "Cannot rename a privat chat", http.StatusBadRequest)
-		ctx.Logger.Error("Cannot rename a private chat")
+		http.Error(writer, "Cannot change photo of a private chat", http.StatusBadRequest)
+		ctx.Logger.Error("Cannot change photo of a private chat")
 		return
 	}
 
@@ -82,30 +83,12 @@ func (rt *_router) putSetGroupPhoto(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	// Controllo che sia un'immagine base64
-	if !strings.HasPrefix(requestBody.Photo, "data:image/png") {
-		http.Error(writer, "Invalid image Format", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Invalid image Format")
-		return
-	}
+	// Controllo che sia un'immagine base64 e non troppo grande
+	validImage := validateBase64Image(requestBody.Photo)
 
-	parts := strings.SplitN(requestBody.Photo, ",", 2)
-	if len(parts) != 2 {
-		http.Error(writer, "invalid base64 format", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Invalid base64 Format")
-		return
-	}
-
-	data, err := base64.StdEncoding.DecodeString(parts[1])
-	if err != nil {
-		http.Error(writer, "invalid base64 encoding", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Invalid base64 encoding")
-		return
-	}
-
-	if len(data) > 500*1024 {
-		http.Error(writer, "image too large", http.StatusBadRequest)
-		ctx.Logger.WithError(err).Error("Image too large")
+	if !validImage {
+		http.Error(writer, "Invalid Image", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Invalid Image")
 		return
 	}
 

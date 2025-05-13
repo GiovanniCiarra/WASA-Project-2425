@@ -2,6 +2,7 @@
 	<div class="home-container">
 		<div class="page-title">Le tue Conversazioni</div>
 		<div class="conversation-panel">
+			<!-- barra di ricerca -->
 			<input
 				v-model="searchQuery"
 				type="text"
@@ -9,10 +10,7 @@
 				placeholder="Cerca conversazioni..."
 			/>
 
-			<div v-if="conversationError" class="error-message">
-				{{ conversationError }}
-			</div>
-
+			<!-- Lista conversazioni -->
 			<div
 				v-if="filteredConversations && filteredConversations.length > 0"
 				class="conversation-list"
@@ -34,6 +32,7 @@
 				/>
 			</div>
 
+			<!-- Stato vuoto -->
 			<div v-else class="empty-state">
 				<p>Nessuna conversazione trovata.</p>
 				<button @click="startNewConversation">
@@ -54,7 +53,6 @@ export default {
 		return {
 			conversations: [],
 			searchQuery: "",
-			conversationError: "",
 			userId: null,
 			pollingInterval: null,
 		};
@@ -62,14 +60,18 @@ export default {
 
 	mounted() {
 		this.userId = sessionStorage.getItem("userId");
+		if (!this.userId) {
+			this.$router.push("/Login");
+		}
 		this.fetchConversations();
+
 		// Avvio il polling per il fetch delle conversazioni
 		this.pollingInterval = setInterval(() => {
 			this.fetchConversations();
 		}, 5000);
 	},
 
-	beforeDestroy() {
+	beforeUnmount() {
 		this.clearPolling();
 	},
 
@@ -93,15 +95,13 @@ export default {
 	},
 
 	methods: {
+		// Push alla view per creazione chat
 		startNewConversation() {
 			this.$router.push("/NewChat");
 		},
 
+		// Fetch delle conversazioni
 		async fetchConversations() {
-			if (!this.userId) {
-				this.$router.push("/login");
-				return;
-			}
 			try {
 				const res = await this.$axios.get("/conversations", {
 					headers: {
@@ -111,13 +111,46 @@ export default {
 				this.conversations = res.data;
 			} catch (err) {
 				console.log("Errore nel caricamento delle conversazioni!");
+				this.handleError(err);
 			}
 		},
 
+		// Elimino il polling
 		clearPolling() {
 			if (this.pollingInterval) {
 				clearInterval(this.pollingInterval);
 				this.pollingInterval = null;
+			}
+		},
+
+		// Gestore degli errori
+		handleError(err) {
+			if (!err.response) {
+				this.$root.showToast(
+					"Errore di rete: controlla la connessione.",
+					"error"
+				);
+				return;
+			}
+
+			const status = err.response.status;
+
+			switch (status) {
+				case 401:
+					this.$root.showToast(
+						"Errore 401: Non autorizzato, effettua di nuovo il login",
+						"error"
+					);
+					this.$router.push("/Login");
+					break;
+				case 500:
+					this.$root.showToast(
+						"Errore 500:\n Impossibile caricare le conversazioni!",
+						"error"
+					);
+					break;
+				default:
+					this.$root.showToast("Errore sconosciuto", "error");
 			}
 		},
 	},
@@ -230,11 +263,5 @@ button:hover {
 
 button:active {
 	transform: translateY(-1px);
-}
-
-.error-message {
-	color: red;
-	text-align: center;
-	margin-bottom: 10px;
 }
 </style>

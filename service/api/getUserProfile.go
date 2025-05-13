@@ -9,6 +9,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// getUserProfile returns the authenticated user's profile information (userId, username, and photo).
+
 func (rt *_router) getUserProfile(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -52,11 +54,11 @@ func (rt *_router) getUserProfile(writer http.ResponseWriter, reader *http.Reque
 	writer.WriteHeader(http.StatusOK)
 
 	if err = json.NewEncoder(writer).Encode(response); err != nil {
-		ctx.Logger.WithError(err).Error("Failed to Create Response")
-		http.Error(writer, "Failed to Create Response", http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("Failed to create response")
+		http.Error(writer, "Failed to create response", http.StatusInternalServerError)
 		return
 	}
 
 	// Scrivo il successo nel logger
-	ctx.Logger.Infof("GetConversationMembers completed succesfully")
+	ctx.Logger.Infof("getUserProfile completed successfully")
 }

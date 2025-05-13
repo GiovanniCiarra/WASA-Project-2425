@@ -5,6 +5,9 @@ import (
 	"unicode"
 )
 
+// isValidName checks whether the input string is between 3 and 16 characters,
+// contains only letters, digits, and spaces, and includes at least one alphanumeric character.
+
 func isValidName(name string) bool {
 
 	// Controllo la lunghezza

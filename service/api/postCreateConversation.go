@@ -8,6 +8,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// postCreateConversation creates a new group or private conversation.
+// It validates the current user, checks the members, and optionally verifies the group photo.
+
 func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *http.Request, _ httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -40,12 +43,12 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 	}
 
 	if err := json.NewDecoder(reader.Body).Decode(&requestBody); err != nil {
-		ctx.Logger.WithError(err).Error("Invalid JSON format")
-		http.Error(writer, "Invalid JSON format", http.StatusBadRequest)
+		ctx.Logger.WithError(err).Error("Invalid JSON format in request")
+		http.Error(writer, "Invalid JSON format in request", http.StatusBadRequest)
 		return
 	}
 
-	// Controllo se i memebri siano utenti validi
+	// Controllo che i memebri siano utenti validi
 	for _, member := range requestBody.Members {
 		ok, err := rt.db.DoesUserExist(member)
 		if err != nil {
@@ -57,6 +60,17 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 		if !ok {
 			ctx.Logger.Error("member userId is not valid")
 			http.Error(writer, "member userId is not valid", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// Se c'è la foto, controllo che sia valida in base 64 e non troppo grande
+	if requestBody.Photo != "" {
+		validImage := validateBase64Image(requestBody.Photo)
+
+		if !validImage {
+			http.Error(writer, "Invalid Image", http.StatusBadRequest)
+			ctx.Logger.WithError(err).Error("Invalid Image")
 			return
 		}
 	}
@@ -78,12 +92,12 @@ func (rt *_router) postCreateConversation(writer http.ResponseWriter, reader *ht
 	writer.WriteHeader(http.StatusCreated)
 
 	if err = json.NewEncoder(writer).Encode(response); err != nil {
-		ctx.Logger.WithError(err).Error("Impossible to create Response")
-		http.Error(writer, "Impossible to Create Response", http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("Failed to create Response")
+		http.Error(writer, "Failed to Create Response", http.StatusInternalServerError)
 		return
 	}
 
 	// Scrivo il successo nel logger
-	ctx.Logger.Infof("postCreateConversation completed succesfully: %d", conversationId)
+	ctx.Logger.Infof("postCreateConversation completed successfully: %d", conversationId)
 
 }

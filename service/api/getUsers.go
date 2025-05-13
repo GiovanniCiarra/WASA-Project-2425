@@ -22,7 +22,7 @@ func (rt *_router) getUsers(writer http.ResponseWriter, reader *http.Request, _ 
 	valid, err := rt.db.DoesUserExist(userId)
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to validate user")
-		http.Error(writer, "Impossible to validate user", http.StatusInternalServerError)
+		http.Error(writer, "Errore durante il caricamento degli utenti", http.StatusInternalServerError)
 		return
 	}
 
@@ -37,7 +37,7 @@ func (rt *_router) getUsers(writer http.ResponseWriter, reader *http.Request, _ 
 
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to get Users")
-		http.Error(writer, "Impossible to get Users", http.StatusInternalServerError)
+		http.Error(writer, "Errore durante il caricamento degli utenti", http.StatusInternalServerError)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (rt *_router) getUsers(writer http.ResponseWriter, reader *http.Request, _ 
 
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Impossible to Create Response")
-		http.Error(writer, "Impossible to Create Response", http.StatusInternalServerError)
+		http.Error(writer, "Errore durante il caricamento degli utenti", http.StatusInternalServerError)
 		return
 	}
 

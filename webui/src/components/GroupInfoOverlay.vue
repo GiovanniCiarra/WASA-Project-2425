@@ -50,7 +50,7 @@
 
 				<div class="member-list-scrollable">
 					<MemberItem
-						v-for="member in members"
+						v-for="member in sortedMembers"
 						:key="member.userId"
 						:member="member"
 						:currentUser="currentUser"
@@ -119,6 +119,22 @@ export default {
 				this.newGroupName.trim() !== this.groupName
 			);
 		},
+
+		// Ordino i membri per avere quello corrente sempre in cima
+		sortedMembers() {
+			if (!this.members) return [];
+
+			// Divido il membro corrente e gli altri
+			const current = this.members.find(
+				(member) => member.userId === this.currentUser
+			);
+			const others = this.members.filter(
+				(member) => member.userId !== this.currentUser
+			);
+
+			// Ritorno lista con l'utente corrente per primo
+			return current ? [current, ...others] : others;
+		},
 	},
 
 	watch: {
@@ -149,6 +165,7 @@ export default {
 				);
 			} catch (err) {
 				console.error("Errore nel caricamento degli utenti", err);
+				this.handleError(err);
 			}
 		},
 
@@ -181,6 +198,34 @@ export default {
 					this.$emit("updateGroupPhoto", this.newGroupPhoto);
 				};
 				reader.readAsDataURL(file);
+			}
+		},
+
+		handleError(err) {
+			if (!err.response) {
+				this.$root.showToast(
+					"Errore di rete: controlla la connessione.",
+					"error"
+				);
+				return;
+			}
+
+			const status = err.response.status;
+			const detail = err.response.data || "ERRORE";
+
+			switch (status) {
+				case 401:
+					this.$root.showToast(
+						"Errore 401: Non autorizzato, effettua di nuovo il login",
+						"error"
+					);
+					this.$router.push("/Login");
+					break;
+				case 500:
+					this.$root.showToast(`Errore 500:\n ${detail}!`, "error");
+					break;
+				default:
+					this.$root.showToast("Errore sconosciuto", "error");
 			}
 		},
 	},

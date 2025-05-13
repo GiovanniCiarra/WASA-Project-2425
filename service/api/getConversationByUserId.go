@@ -11,6 +11,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// getConversationByUserId checks if a private conversation exists between the authenticated user and a target user.
+// If it exists, returns the conversationId.
+
 func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -68,8 +71,8 @@ func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *h
 	conversationId, err := rt.db.DoesConversationExists(userId, targetUserId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			ctx.Logger.WithError(err).Error("the conversation does not exist")
-			http.Error(writer, "the conversation does not exist", http.StatusNotFound)
+			ctx.Logger.WithError(err).Error("No conversation found between users")
+			http.Error(writer, "No conversation found between users", http.StatusNotFound)
 			return
 		}
 		ctx.Logger.WithError(err).Error("Impossible to check conversation existence")
@@ -87,8 +90,8 @@ func (rt *_router) getConversationByUserId(writer http.ResponseWriter, reader *h
 	writer.WriteHeader(http.StatusOK)
 
 	if err = json.NewEncoder(writer).Encode(response); err != nil {
-		ctx.Logger.WithError(err).Error("Failed to Create Response")
-		http.Error(writer, "Failed to Create Response", http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("Failed to create response")
+		http.Error(writer, "Failed to create response", http.StatusInternalServerError)
 		return
 	}
 

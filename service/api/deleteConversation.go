@@ -8,6 +8,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// deleteConversation deletes a conversation by conversationId.
+
 func (rt *_router) deleteConversation(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -51,6 +53,6 @@ func (rt *_router) deleteConversation(writer http.ResponseWriter, reader *http.R
 	// Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
-	ctx.Logger.Infof("conversation %d is deleted successfully ", conversationId)
+	ctx.Logger.Infof("conversation %d deleted successfully ", conversationId)
 
 }

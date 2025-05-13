@@ -8,6 +8,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// deleteLeaveGroup allows a user to leave a group conversation.
+// If the group becomes empty, it is deleted.
+
 func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -44,7 +47,7 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 	isGroup, err := rt.db.IsGroup(conversationId)
 	if err != nil {
 		http.Error(writer, "Database error while checking conversation type", http.StatusInternalServerError)
-		ctx.Logger.WithError(err).Error("Database error while checking converation type")
+		ctx.Logger.WithError(err).Error("Database error while checking conversation type")
 		return
 	}
 
@@ -97,10 +100,10 @@ func (rt *_router) deleteLeaveGroup(writer http.ResponseWriter, reader *http.Req
 	// Scrivo la risposta di successo
 	writer.WriteHeader(http.StatusNoContent)
 
-	ctx.Logger.Infof("user %d leave successfully the group %d", userId, conversationId)
+	ctx.Logger.Infof("user %d left the group %d successfully", userId, conversationId)
 
 	if !hasMembers {
-		ctx.Logger.Infof("group %d is deleted because it has no members", conversationId)
+		ctx.Logger.Infof("group %d deleted because it had no members", conversationId)
 	}
 
 }

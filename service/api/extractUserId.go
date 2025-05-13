@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+// extractUserID parses the Authorization header in the form "Bearer <userId>"
+// and returns the userId as an integer.
+
 func extractUserID(reader *http.Request, ctx reqcontext.RequestContext) (int, error) {
 
 	// Estraggo il token dall'header Authorization

@@ -9,6 +9,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// getConversationMembers returns the list of members for a specific conversation,
+// only if the requesting user is a member of that conversation.
+
 func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -44,14 +47,14 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 	// Controllo che l'utente faccia parte della conversazione
 	isMember, err := rt.db.IsUserInConversation(userId, conversationId)
 	if err != nil {
-		http.Error(writer, "error checking conversation membership", http.StatusBadRequest)
+		http.Error(writer, "error checking conversation membership", http.StatusInternalServerError)
 		ctx.Logger.WithError(err).Error("error checking conversation membership")
 		return
 	}
 
 	if !isMember {
-		http.Error(writer, "user not part of the conversation", http.StatusBadRequest)
-		ctx.Logger.Error("user not part of the conversation")
+		http.Error(writer, "user is not a member of the conversation", http.StatusForbidden)
+		ctx.Logger.Error("user is not a member of the conversation")
 		return
 	}
 
@@ -68,11 +71,11 @@ func (rt *_router) getConversationMembers(writer http.ResponseWriter, reader *ht
 	writer.WriteHeader(http.StatusOK)
 
 	if err = json.NewEncoder(writer).Encode(members); err != nil {
-		ctx.Logger.WithError(err).Error("Failed to Create Response")
-		http.Error(writer, "Failed to Create Response", http.StatusInternalServerError)
+		ctx.Logger.WithError(err).Error("Failed to create response")
+		http.Error(writer, "Failed to create response", http.StatusInternalServerError)
 		return
 	}
 
 	// Scrivo il successo nel logger
-	ctx.Logger.Infof("GetConversationMembers completed succesfully")
+	ctx.Logger.Infof("GetConversationMembers completed successfully")
 }

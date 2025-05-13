@@ -117,6 +117,7 @@ export default {
 			this.users = res.data;
 		} catch (err) {
 			console.error("Errore nel caricamento utenti", err);
+			this.handleError(err);
 		}
 	},
 
@@ -153,7 +154,7 @@ export default {
 		async createGroup() {
 			try {
 				const res = await this.$axios.post(
-					"/conversations",
+					"/conversations/create",
 					{
 						name: this.groupName,
 						photo: this.groupPhoto || "",
@@ -175,6 +176,38 @@ export default {
 				});
 			} catch (err) {
 				console.error("Errore nella creazione del gruppo", err);
+				this.handleError(err);
+			}
+		},
+
+		handleError(err) {
+			if (!err.response) {
+				this.$root.showToast(
+					"Errore di rete: controlla la connessione.",
+					"error"
+				);
+				return;
+			}
+
+			const status = err.response.status;
+			const detail = err.response.data || "ERRORE";
+
+			switch (status) {
+				case 400:
+					this.$root.showToast(`Errore 400:\n ${detail}!`, "error");
+					break;
+				case 401:
+					this.$root.showToast(
+						"Errore 401: Non autorizzato, effettua di nuovo il login",
+						"error"
+					);
+					this.$router.push("/Login");
+					break;
+				case 500:
+					this.$root.showToast(`Errore 500:\n ${detail}!`, "error");
+					break;
+				default:
+					this.$root.showToast("Errore sconosciuto", "error");
 			}
 		},
 	},

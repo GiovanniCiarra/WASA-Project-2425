@@ -57,6 +57,7 @@ type ReplyInfo struct {
 	Content        string `json:"content"`
 	Type           string `json:"type"`
 	SenderUsername string `json:"senderUsername"`
+	Deleted        bool   `json:"deleted,omitempty"`
 }
 
 type Message struct {

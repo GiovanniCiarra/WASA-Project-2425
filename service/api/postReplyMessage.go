@@ -11,6 +11,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// postReplyMessage allows a user to reply to an existing message within the same conversation.
+// It returns the new message and metadata about the original message.
+
 func (rt *_router) postReplyMessage(writer http.ResponseWriter, reader *http.Request, params httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -35,7 +38,7 @@ func (rt *_router) postReplyMessage(writer http.ResponseWriter, reader *http.Req
 		return
 	}
 
-	// Decodifico al richiesta
+	// Decodifico la richiesta
 	var requestBody struct {
 		Content string `json:"content"`
 		Type    string `json:"type"`
@@ -141,5 +144,5 @@ func (rt *_router) postReplyMessage(writer http.ResponseWriter, reader *http.Req
 	}
 
 	// Scrivo il successo dell'operazione
-	ctx.Logger.Infof("Replyed to message %d successfully", messageId)
+	ctx.Logger.Infof("Replied to message %d successfully", messageId)
 }

@@ -8,6 +8,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// getMyConversations retrieves all conversations for the user.
+// It updates the status of messages to 'received' and returns the list as JSON.
+
 func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.Request, _ httprouter.Params, ctx reqcontext.RequestContext) {
 
 	// Estraggo lo userId dall'Header
@@ -33,7 +36,7 @@ func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.R
 	}
 
 	// Richiamo la funzione del database per ottenere la lista delle chat
-	ChatsList, err := rt.db.GetMyConversations(userId)
+	chatList, err := rt.db.GetMyConversations(userId)
 
 	if err != nil {
 		ctx.Logger.WithError(err).Error("Failed to retrieve conversations")
@@ -53,13 +56,13 @@ func (rt *_router) getMyConversations(writer http.ResponseWriter, reader *http.R
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	if err = json.NewEncoder(writer).Encode(ChatsList); err != nil {
-		ctx.Logger.WithError(err).Error("Impossible to craete response")
-		http.Error(writer, "Impossible to Create Response", http.StatusInternalServerError)
+	if err = json.NewEncoder(writer).Encode(chatList); err != nil {
+		ctx.Logger.WithError(err).Error("Impossible to create response")
+		http.Error(writer, "Impossible to create Response", http.StatusInternalServerError)
 		return
 	}
 
 	// Scrivo il successo nel logger
-	ctx.Logger.Infof("GetMyConversations completed succesfully")
+	ctx.Logger.Infof("GetMyConversations completed successfully")
 
 }
