@@ -19,6 +19,7 @@
 					v-for="conv in filteredConversations"
 					:key="conv.conversationId"
 					:conversation="conv"
+					:currentUser="userId"
 					@click="
 						$router.push({
 							path: `/conversations/${conv.conversationId}`,
@@ -59,7 +60,7 @@ export default {
 	},
 
 	mounted() {
-		this.userId = sessionStorage.getItem("userId");
+		this.userId = Number(sessionStorage.getItem("userId"));
 		if (!this.userId) {
 			this.$router.push("/Login");
 		}
@@ -83,13 +84,23 @@ export default {
 	computed: {
 		filteredConversations() {
 			if (this.conversations) {
-				return this.conversations.filter(
-					(conv) =>
-						conv.name
-							.toLowerCase()
-							.includes(this.searchQuery.toLowerCase()) &&
-						conv.lastMessage.messageId !== 0
-				);
+				return this.conversations
+					.filter(
+						(conv) =>
+							conv.name
+								.toLowerCase()
+								.includes(this.searchQuery.toLowerCase()) &&
+							conv.lastMessage.messageId !== 0
+					)
+					.sort((a, b) => {
+						const timeA = new Date(
+							a.lastMessage.timestamp
+						).getTime();
+						const timeB = new Date(
+							b.lastMessage.timestamp
+						).getTime();
+						return timeB - timeA; // Ordine decrescente, dal più recente
+					});
 			}
 		},
 	},

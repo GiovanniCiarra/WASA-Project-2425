@@ -29,12 +29,38 @@
 						</span>
 					</template>
 					<template v-else>
-						{{ conversation.lastMessage.content }}
+						<template v-if="conversation.type === 'group'">
+							<strong
+								>{{ conversation.lastMessage.senderUsername }}:
+							</strong>
+							<span>
+								{{ conversation.lastMessage.content }}
+							</span>
+						</template>
+						<template v-else>
+							{{ conversation.lastMessage.content }}
+						</template>
 					</template>
 				</template>
 				<template v-else> Nessun messaggio </template>
 			</div>
 		</div>
+
+		<!-- Notifica di messaggio non letto -->
+		<img
+			v-if="
+				conversation.lastMessage &&
+				conversation.lastMessage.status !== 'read' &&
+				conversation.lastMessage.senderId !== currentUser &&
+				conversation.type !== 'group' &&
+				($route.name !== 'Conversation' ||
+					conversation.conversationId !==
+						Number($route.params.conversationId))
+			"
+			:src="newMessageDot"
+			alt="Non letto"
+			class="unread-dot"
+		/>
 	</div>
 </template>
 
@@ -42,11 +68,13 @@
 import defaultGroupPhoto from "../assets/images/default-group-48.png";
 import defaultUserPhoto from "../assets/images/default-user-48.png";
 import imageSnippet from "../assets/icons/image-snippet.png";
+import newMessageDot from "../assets/icons/new-message.png";
 
 export default {
 	props: {
 		conversation: Object,
 		isSelected: Boolean,
+		currentUser: Number,
 	},
 
 	data() {
@@ -54,6 +82,7 @@ export default {
 			defaultGroupPhoto,
 			defaultUserPhoto,
 			imageSnippet,
+			newMessageDot,
 		};
 	},
 };
@@ -99,7 +128,7 @@ export default {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	max-width: 180px;
+	max-width: 170px;
 }
 
 .snippet-icon {
@@ -123,5 +152,11 @@ export default {
 .selected {
 	background-color: #d2f1e6;
 	border-left: 4px solid #2fa27a;
+}
+
+.unread-dot {
+	width: 12px;
+	height: 12px;
+	margin-left: 8px;
 }
 </style>

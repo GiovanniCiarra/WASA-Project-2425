@@ -62,7 +62,7 @@ components:
           description: the user's photo, a Base64-encoded PNG image (data URI format)
           type: string
           pattern: "^data:image/png;base64,[A-Za-z0-9+/=]+$"
-          example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA..."
+          example: "data:image/png;base64,aGVsbG8="
           minLength: 30 # Escludo stringhe troppo corte
           maxLength: 700000 # ~500 KB
 
@@ -96,7 +96,7 @@ components:
           description: the comversation's photo, a Base64-encoded PNG image (data URI format)
           type: string
           pattern: "^data:image/png;base64,[A-Za-z0-9+/=]+$"
-          example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA..."
+          example: "data:image/png;base64,aGVsbG8="
           minLength: 30 # Escludo stringhe troppo corte
           maxLength: 700000 # ~500 KB
         lastMessage:
@@ -137,7 +137,7 @@ components:
             - description: a Base64-encoded PNG image (data URI format), body of the message
               type: string
               pattern: "^data:image/png;base64,[A-Za-z0-9+/=]+$"
-              example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA..."
+              example: "data:image/png;base64,aGVsbG8="
               minLength: 30 # Escludo stringhe troppo corte
               maxLength: 700000 # ~500 KB
         senderId:
@@ -451,7 +451,7 @@ paths:
                   description: Base64-encoded PNG image (data URI format), only for groups
                   type: string
                   pattern: "^data:image/png;base64,[A-Za-z0-9+/=]+$"
-                  example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA..."
+                  example: "data:image/png;base64,aGVsbG8="
                   minLength: 30 # Escludo stringhe troppo corte
                   maxLength: 700000 # ~500 KB
                 members:

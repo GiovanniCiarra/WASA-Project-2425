@@ -6,6 +6,7 @@
 				:name="conversationName"
 				:photo="conversationPhoto"
 				:type="conversationType"
+				:members="members"
 				@openInfo="$emit('openCloseConversationInfo')"
 			/>
 

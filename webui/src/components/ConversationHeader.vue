@@ -8,7 +8,13 @@
 			alt="Foto"
 			class="header-photo"
 		/>
-		<span class="header-name">{{ name }}</span>
+
+		<div class="header-text">
+			<span class="header-name">{{ name }}</span>
+			<span v-if="type === 'group'" class="header-members">
+				{{ truncatedMemberList }}
+			</span>
+		</div>
 	</div>
 </template>
 
@@ -21,6 +27,7 @@ export default {
 		name: String,
 		photo: String,
 		type: String,
+		members: Array,
 	},
 
 	emits: ["openInfo"],
@@ -30,6 +37,14 @@ export default {
 			defaultGroupPhoto,
 			defaultUserPhoto,
 		};
+	},
+
+	computed: {
+		truncatedMemberList() {
+			const usernames = this.members.map((m) => m.username);
+			const result = usernames.join(", ");
+			return result.length > 100 ? result.slice(0, 100) + "..." : result;
+		},
 	},
 };
 </script>
@@ -52,9 +67,24 @@ export default {
 	margin-right: 12px;
 }
 
+.header-text {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
 .header-name {
 	font-size: 1.1rem;
 	font-weight: 600;
 	color: #333;
+}
+
+.header-members {
+	font-size: 0.85rem;
+	color: #666;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 900px; /* regola a seconda dello spazio disponibile */
 }
 </style>

@@ -15,6 +15,7 @@
 				>
 					<ConversationItem
 						:conversation="conv"
+						:currentUser="userId"
 						:isSelected="conv.conversationId == conversationId"
 						@click="
 							$router.push({
@@ -67,18 +68,19 @@ export default {
 
 	data() {
 		return {
-			messages: [],
-			members: [],
-			conversations: [],
-			userId: null,
-			messageSent: false,
-			searchQuery: "",
-			pollingInterval: null,
-			conversationName: this.$route.query.name,
-			conversationPhoto: this.$route.query.photo,
-			conversationType: this.$route.query.type,
-			commentPopupMessage: null,
-			conversationInfoOpen: false,
+			messages: [], // Lista dei messaggi
+			oldMessages: [], // Copia dei messaggi pre fetchMessages()
+			members: [], // Conversation Members se type = 'group'
+			conversations: [], // Lista delle conversazioni
+			userId: null, // userId dell'utente corrente
+			messageSent: false, // Booleano per notificare che la conversazione corrente abbia almeno un messaggio
+			searchQuery: "", // Input della search bar delle conversazioni
+			pollingInterval: null, // Variabile per il polling
+			conversationName: this.$route.query.name, // ConversationName
+			conversationPhoto: this.$route.query.photo, // ConversationPhoto
+			conversationType: this.$route.query.type, // ConversationType
+			commentPopupMessage: null, // Messaggio che segnala l'apertura del commentPopup associato
+			conversationInfoOpen: false, // Booleano che segnala l'apertura degli overlay
 		};
 	},
 	computed: {
@@ -87,14 +89,24 @@ export default {
 			return Number(this.$route.params.conversationId);
 		},
 
-		//Filtro per le conversazioni visibili
+		//Filtro per le conversazioni visibili ordinate in base al timestamp dell'ultimo messaggio
 		filteredConversations() {
 			if (this.conversations) {
-				return this.conversations.filter((conv) =>
-					conv.name
-						.toLowerCase()
-						.includes(this.searchQuery.toLowerCase())
-				);
+				return this.conversations
+					.filter((conv) =>
+						conv.name
+							.toLowerCase()
+							.includes(this.searchQuery.toLowerCase())
+					)
+					.sort((a, b) => {
+						const timeA = new Date(
+							a.lastMessage.timestamp
+						).getTime();
+						const timeB = new Date(
+							b.lastMessage.timestamp
+						).getTime();
+						return timeB - timeA; // Ordine decrescente, dal più recente
+					});
 			}
 		},
 	},
@@ -132,7 +144,7 @@ export default {
 
 	mounted() {
 		// Eseguo il fetch di conversazioni, messaggi e memebri
-		this.userId = sessionStorage.getItem("userId");
+		this.userId = Number(sessionStorage.getItem("userId"));
 		if (!this.userId) {
 			this.$router.push("/Login");
 		}
@@ -199,8 +211,18 @@ export default {
 					}
 				);
 				if (res.data) {
+					this.oldMessages = this.messages;
 					this.messages = res.data;
 					this.messageSent = true;
+				}
+
+				if (this.messages.length > this.oldMessages.length) {
+					if (
+						this.$refs.conversationWindow &&
+						this.$refs.conversationWindow.scrollToBottom
+					) {
+						this.$refs.conversationWindow.scrollToBottom();
+					}
 				}
 			} catch (err) {
 				console.error("Errore nel caricamento dei messaggi", err);
@@ -368,6 +390,7 @@ export default {
 					);
 				}
 			}
+			this.fetchConversations();
 		},
 
 		/* -------------- GESTIONE GRUPPI -------------- */

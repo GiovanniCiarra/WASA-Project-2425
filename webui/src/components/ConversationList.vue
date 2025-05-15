@@ -41,9 +41,11 @@ export default {
 	},
 	computed: {
 		filteredConversations() {
-			return this.conversations.filter((conv) =>
-				conv.name.toLowerCase().includes(this.search.toLowerCase())
-			);
+			if (this.conversations) {
+				return this.conversations.filter((conv) =>
+					conv.name.toLowerCase().includes(this.search.toLowerCase())
+				);
+			}
 		},
 	},
 };
