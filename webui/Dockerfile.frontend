@@ -1,0 +1,12 @@
+# UselatestNodeLTS tobuild
+ FROM node:lts AS builder
+ # Copy Vue.jscode
+ WORKDIR /app
+ COPY . .
+ ###BuildVue.jsinto plainHTML/CSS/JS
+ RUN yarn build-prod
+ ###Create finalcontainer
+ FROM nginx:stable
+ ###Copy the(built)appfromthebuilderimage
+ COPY --from=builder /app/dist /usr/share/nginx/html
+ EXPOSE 80

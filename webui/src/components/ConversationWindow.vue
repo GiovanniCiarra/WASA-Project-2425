@@ -231,7 +231,7 @@ export default {
 			this.confirmingMessage = null;
 			try {
 				await this.$axios.delete(
-					`/conversation-messages/${this.conversationId}/${message.messageId}`,
+					`/conversations/${this.conversationId}/messages/${message.messageId}`,
 					{
 						headers: {
 							Authorization: `Bearer ${this.userId}`,

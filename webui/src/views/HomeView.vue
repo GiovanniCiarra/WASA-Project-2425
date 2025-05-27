@@ -102,6 +102,7 @@ export default {
 						return timeB - timeA; // Ordine decrescente, dal più recente
 					});
 			}
+			return;
 		},
 	},
 
