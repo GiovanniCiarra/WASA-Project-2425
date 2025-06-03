@@ -668,7 +668,7 @@ paths:
         "500":
           description: internal Server Error
 
-  /conversation-messages/{conversationId}/{messageId}:
+  /conversations/{conversationId}/messages/{messageId}:
     parameters:
       - $ref: "#/components/parameters/conversationId"
       - $ref: "#/components/parameters/messageId"
