@@ -46,7 +46,7 @@ export default {
 					conv.name.toLowerCase().includes(this.search.toLowerCase())
 				);
 			}
-			return;
+			return [];
 		},
 	},
 };
