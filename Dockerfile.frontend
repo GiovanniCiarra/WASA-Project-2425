@@ -1,0 +1,18 @@
+# UselatestNodeLTS tobuild
+FROM node:lts AS builder
+
+# Copy Vue.jscode
+WORKDIR /app
+COPY webui/yarn.lock webui/package.json ./
+RUN yarn install
+
+###BuildVue.jsinto plainHTML/CSS/JS
+COPY webui/ .
+RUN yarn run build-prod
+
+
+###Create finalcontainer
+FROM nginx:stable
+
+###Copy the(built)appfromthebuilderimage
+COPY --from=builder /app/dist /usr/share/nginx/html
