@@ -1,4 +1,5 @@
 <template>
+	<!-- Se è una risposta, mostro il blocco risposta-->
 	<div v-if="replyingTo" class="reply-preview-block">
 		<div class="reply-block">
 			<strong>{{ replyingTo.senderUsername }}</strong>
@@ -12,11 +13,14 @@
 				</span>
 			</div>
 		</div>
+
+		<!-- Icona per rimuovere l'azione di risposta -->
 		<button class="cancel-reply-btn" @click="$emit('cancelReply')">
 			<img :src="closeIcon" alt="Annulla" />
 		</button>
 	</div>
 
+	<!-- Input container -->
 	<div class="input-container">
 		<!-- Immagine -->
 		<div class="icon-button" @click="$refs.fileInput.click()">
@@ -65,7 +69,7 @@ export default {
 			type: [String, Number],
 			required: true,
 		},
-		replyingTo: Object,
+		replyingTo: Object, // Messaggio originale a cui rispondere
 	},
 
 	emits: ["messageSent", "cancelReply"],
@@ -90,11 +94,13 @@ export default {
 			if (file) this.selectedImage = file;
 		},
 
+		// Rimuove l'immagine appena inserita
 		removeImage() {
 			this.selectedImage = null;
 			if (this.$refs.fileInput) this.$refs.fileInput.value = "";
 		},
 
+		// Riceve il segnale di invio e in base al tipo di messaggio (text, pgoto, reply), richiama le varie funzioni
 		async handleSend() {
 			if (this.selectedImage) {
 				const reader = new FileReader();
@@ -116,12 +122,14 @@ export default {
 			this.resetInput();
 		},
 
+		// Resetta tutti gli input
 		resetInput() {
 			this.textMessage = "";
 			this.selectedImage = null;
 			if (this.$refs.fileInput) this.$refs.fileInput.value = "";
 		},
 
+		// Salva e invia il messaggio
 		async sendMessage(content, type) {
 			try {
 				const res = await this.$axios.post(
@@ -141,6 +149,7 @@ export default {
 			}
 		},
 
+		// Salva e invia il messaggio come risposta
 		async replyMessage(content, type) {
 			try {
 				const res = await this.$axios.post(
@@ -161,6 +170,7 @@ export default {
 			}
 		},
 
+		// Gestore degli errori
 		handleError(err) {
 			if (!err.response) {
 				this.$root.showToast(

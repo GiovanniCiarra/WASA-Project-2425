@@ -1,6 +1,8 @@
 <template>
 	<div class="profile-container">
+		<!-- page title -->
 		<div class="page-title">Profilo</div>
+		<!-- Box principale -->
 		<div class="profile-content">
 			<div class="profile-photo-wrapper">
 				<label class="photo-upload">
@@ -10,6 +12,7 @@
 						@change="handlePhotoUpload"
 						hidden
 					/>
+					<!-- Immagine del profilo -->
 					<img
 						:src="newPhoto || photo || defaultPhoto"
 						alt="Foto profilo"
@@ -17,6 +20,7 @@
 					/>
 				</label>
 
+				<!-- icona di rimozione foto -->
 				<img
 					v-if="newPhoto || photo"
 					class="remove-icon"
@@ -26,12 +30,14 @@
 				/>
 			</div>
 
+			<!-- text field per username -->
 			<input
 				v-model="newUsername"
 				class="username-input"
 				:placeholder="username"
 			/>
 
+			<!-- save button -->
 			<button class="save-btn" @click="saveProfile" :disabled="!canSave">
 				Salva Modifiche
 			</button>
@@ -46,14 +52,15 @@ export default {
 	data() {
 		return {
 			userId: Number(sessionStorage.getItem("userId")),
-			username: "",
-			photo: null,
-			newUsername: "",
-			newPhoto: null,
+			username: "", // username corrente (salvato nel db)
+			photo: null, // foto corrente (salvata nel db)
+			newUsername: "", // username temporaneamente inserito (non ancora salvato nel db)
+			newPhoto: null, // foto temporaneamente inserito (non ancora salvata nel db)
 			defaultPhoto: defaultUserPhoto,
 		};
 	},
 	computed: {
+		// Verifica se ci sono modifiche da poter salvare (abilita/disabilita il bottone)
 		canSave() {
 			return (
 				(this.newUsername.trim() &&
@@ -65,6 +72,7 @@ export default {
 		},
 	},
 	methods: {
+		// Fetch delle informazioni dell'utente
 		async fetchUserProfile() {
 			try {
 				const res = await this.$axios.get("/profile", {
@@ -77,6 +85,7 @@ export default {
 			}
 		},
 
+		// handler della foto
 		handlePhotoUpload(event) {
 			const file = event.target.files[0];
 			if (file) {
@@ -88,6 +97,7 @@ export default {
 			}
 		},
 
+		// Salva le modifiche effettuate
 		async saveProfile() {
 			try {
 				if (
@@ -145,11 +155,13 @@ export default {
 			}
 		},
 
+		// Rimuove la foto temporanea
 		removeUserPhoto() {
 			this.photo = null;
 			this.newPhoto = null;
 		},
 
+		// Gestore degli errori
 		handleError(err) {
 			if (!err.response) {
 				this.$root.showToast(
@@ -203,7 +215,6 @@ export default {
 	box-sizing: border-box;
 }
 
-/* Titolo alto */
 .page-title {
 	align-self: center;
 	font-size: 3.2rem;
@@ -214,7 +225,6 @@ export default {
 	font-family: "Poppins", sans-serif;
 }
 
-/* Wrapper contenuto principale */
 .profile-content {
 	background: rgba(255, 255, 255, 0.2);
 	backdrop-filter: blur(10px);

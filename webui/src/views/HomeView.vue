@@ -1,6 +1,8 @@
 <template>
 	<div class="home-container">
+		<!-- page title -->
 		<div class="page-title">Le tue Conversazioni</div>
+
 		<div class="conversation-panel">
 			<!-- barra di ricerca -->
 			<input
@@ -52,10 +54,10 @@ export default {
 
 	data() {
 		return {
-			conversations: [],
-			searchQuery: "",
-			userId: null,
-			pollingInterval: null,
+			conversations: [], // Lista conversazioni esistenti
+			searchQuery: "", // text per barra di ricerca conversazioni
+			userId: null, // userId dell'utente
+			pollingInterval: null, // variabile per il polling
 		};
 	},
 
@@ -107,7 +109,7 @@ export default {
 	},
 
 	methods: {
-		// Push alla view per creazione chat
+		// Push alla view per creazione chat privata
 		startNewConversation() {
 			this.$router.push("/NewChat");
 		},
@@ -127,7 +129,7 @@ export default {
 			}
 		},
 
-		// Elimino il polling
+		// Elimina il polling
 		clearPolling() {
 			if (this.pollingInterval) {
 				clearInterval(this.pollingInterval);

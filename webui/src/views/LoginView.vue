@@ -27,8 +27,8 @@
 export default {
 	data() {
 		return {
-			username: null,
-			hasError: false,
+			username: null, // username inserito dall'utente
+			hasError: false, // variabile per errore username
 		};
 	},
 

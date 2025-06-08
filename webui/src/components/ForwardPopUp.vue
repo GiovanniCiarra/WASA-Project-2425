@@ -1,6 +1,7 @@
 <template>
 	<div class="popup-overlay">
 		<div class="popup-content">
+			<!-- Icona di chiusura popup -->
 			<img
 				src="../assets/icons/close-big.png"
 				alt="Chiudi"
@@ -10,33 +11,35 @@
 
 			<h2 class="popup-title">Inoltra a:</h2>
 
-			<div class="user-list">
+			<!-- Lista Conversazioni -->
+			<div class="conv-list">
 				<li
 					v-for="conv in conversations"
 					:key="conv.conversationId"
 					@click="forwardToConversation(conv)"
-					class="user-item"
+					class="conv-item"
 				>
 					<img
 						:src="conv.photo || defaultPhoto"
 						alt="photo"
-						class="user-photo"
+						class="conv-photo"
 					/>
-					<span class="username">{{ conv.name }}</span>
+					<span class="conv-name">{{ conv.name }}</span>
 				</li>
 
+				<!-- Lista Utenti -->
 				<li
 					v-for="user in users"
 					:key="user.userId"
 					@click="forwardToUser(user)"
-					class="user-item"
+					class="conv-item"
 				>
 					<img
 						:src="user.photo || defaultPhoto"
-						alt="user-photo"
-						class="user-photo"
+						alt="photo"
+						class="conv-photo"
 					/>
-					<span class="username">{{ user.username }}</span>
+					<span class="conv-name">{{ user.username }}</span>
 				</li>
 			</div>
 		</div>
@@ -54,16 +57,19 @@ export default {
 	data() {
 		return {
 			defaultPhoto,
-			conversations: [],
-			users: [],
+			conversations: [], // Array delle conversazioni
+			users: [], // Array degli utenti
 		};
 	},
 
 	async created() {
+		// Fetch delle conversazioni
 		try {
 			const res = await this.$axios.get("/conversations", {
 				headers: { Authorization: `Bearer ${this.userId}` },
 			});
+
+			// Filtro le conversazioni, prendendo solo i gruppi
 			this.conversations = res.data.filter(
 				(conv) => conv.conversationId !== this.message.conversationId
 			);
@@ -72,8 +78,10 @@ export default {
 			);
 		} catch (err) {
 			console.error("Errore nel recupero conversazioni", err);
+			this.handleError(err);
 		}
 
+		// Fetch degli utenti
 		try {
 			const res = await this.$axios.get("/users", {
 				headers: { Authorization: `Bearer ${this.userId}` },
@@ -82,10 +90,12 @@ export default {
 			this.users = res.data;
 		} catch (err) {
 			console.error("Errore nel recupero degli utenti", err);
+			this.handleError(err);
 		}
 	},
 
 	methods: {
+		// Inoltro verso un gruppo
 		async forwardToConversation(targetConv) {
 			try {
 				await this.$axios.post(
@@ -112,6 +122,7 @@ export default {
 			}
 		},
 
+		// Inoltro verso un utente
 		async forwardToUser(targetUser) {
 			try {
 				// Verifico se già esiste una conversazione con questo utente
@@ -210,6 +221,7 @@ export default {
 			}
 		},
 
+		// Gestore degli errori
 		handleError(err) {
 			if (!err.response) {
 				this.$root.showToast(
@@ -291,7 +303,7 @@ export default {
 	text-align: center;
 }
 
-.user-list {
+.conv-list {
 	max-height: 300px;
 	overflow-y: auto;
 	display: flex;
@@ -300,7 +312,7 @@ export default {
 	margin-bottom: 20px;
 }
 
-.user-item {
+.conv-item {
 	display: flex;
 	align-items: center;
 	padding: 10px;
@@ -311,12 +323,12 @@ export default {
 	border-bottom: 1px solid #73bfa1;
 }
 
-.user-item:hover {
+.conv-item:hover {
 	background-color: rgba(0, 128, 128, 0.1);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.user-photo {
+.conv-photo {
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
@@ -325,7 +337,7 @@ export default {
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.username {
+.conv-name {
 	font-size: 1rem;
 }
 </style>

@@ -1,12 +1,14 @@
 <template>
 	<teleport to="body">
+		<!-- Transizione -->
 		<transition name="slide-up-fade">
+			<!-- Stile in base alla classe-->
 			<div v-if="visible" :class="['app-toast', typeClass]">
 				<div class="toast-content">
-					<img class="toast-icon-inline" :src="iconSrc" alt="icon" />
+					<img class="toast-icon" :src="iconSrc" alt="icon" />
 					<div class="toast-text">{{ message }}</div>
 				</div>
-				<div class="accent-bar" :class="accentClass"></div>
+				<div class="accent-bar" :class="typeClass"></div>
 			</div>
 		</transition>
 	</teleport>
@@ -44,12 +46,12 @@ export default {
 	},
 
 	computed: {
+		// Decide la classe in base al tipo
 		typeClass() {
 			return `toast-${this.type}`;
 		},
-		accentClass() {
-			return `accent-${this.type}`;
-		},
+
+		// Decide l'icona in base al tipo
 		iconSrc() {
 			switch (this.type) {
 				case "error":
@@ -102,7 +104,7 @@ export default {
 	gap: 10px;
 }
 
-.toast-icon-inline {
+.toast-icon {
 	width: 18px;
 	height: 18px;
 	flex-shrink: 0;

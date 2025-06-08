@@ -1,6 +1,9 @@
 <template>
 	<div class="new-chat-container">
+		<!-- page title -->
 		<div class="page-title">Inizia una Nuova Chat</div>
+
+		<!-- pannello principale -->
 		<div class="new-chat-panel">
 			<input
 				v-model="searchQuery"
@@ -30,7 +33,7 @@ export default {
 	components: { UserItem },
 	data() {
 		return {
-			users: [],
+			users: [], // array degli utenti registrati
 			searchQuery: "",
 			userId: null,
 		};
@@ -50,6 +53,7 @@ export default {
 	},
 
 	methods: {
+		// Fetch degli utenti
 		async fetchUsers() {
 			this.userId = sessionStorage.getItem("userId");
 			if (!this.userId) return this.$router.push("/Login");
@@ -64,6 +68,7 @@ export default {
 			}
 		},
 
+		// handler del click su un utente, che crea una conversazione o la pusha se già esistente
 		async handleUserClick(targetUser) {
 			try {
 				// Verifico se già esiste una conversazione con questo utente
@@ -74,7 +79,7 @@ export default {
 					}
 				);
 
-				// Se la conversazione esiste, allora ottendo il conversationId e cambio View
+				// Se la conversazione esiste, allora ottengo il conversationId e cambio View
 				const conversationId = res.data.conversationId;
 				this.$router.push({
 					path: `/conversations/${conversationId}`,
@@ -125,6 +130,7 @@ export default {
 			}
 		},
 
+		// Gestore degli errori
 		handleError(err) {
 			if (!err.response) {
 				this.$root.showToast(

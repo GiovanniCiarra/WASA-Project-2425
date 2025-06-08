@@ -1,11 +1,14 @@
 <template>
 	<div class="comment-picker">
+		<!-- Icona di chiusura del Picker -->
 		<img
 			src="../assets/icons/close.png"
 			alt="close"
 			class="close-icon"
 			@click="$emit('close-emoji')"
 		/>
+
+		<!-- Griglia emoji -->
 		<div class="emoji-grid">
 			<span
 				v-for="emoji in emojis"

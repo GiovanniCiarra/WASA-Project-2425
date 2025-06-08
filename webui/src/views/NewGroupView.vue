@@ -1,7 +1,9 @@
 <template>
 	<div class="new-group-container">
+		<!-- page title -->
 		<div class="page-title">Crea un Nuovo Gruppo</div>
 		<div class="main-content">
+			<!-- Colonna di sinistra -->
 			<div class="left-column">
 				<div class="photo-wrapper">
 					<label class="group-photo">
@@ -27,6 +29,8 @@
 						@click.stop="removeGroupPhoto"
 					/>
 				</div>
+
+				<!-- Nome del gruppo -->
 				<input
 					class="group-name"
 					v-model="groupName"
@@ -34,6 +38,7 @@
 				/>
 			</div>
 
+			<!-- colonna destra -->
 			<div class="right-column">
 				<input
 					v-model="searchQuery"
@@ -73,8 +78,8 @@ export default {
 
 	data() {
 		return {
-			users: [],
-			selectedUsers: [],
+			users: [], // Array degli utenti registrati
+			selectedUsers: [], // Array degli utenti selezionati
 			searchQuery: "",
 			groupName: "",
 			groupPhoto: null,
@@ -84,6 +89,7 @@ export default {
 	},
 
 	computed: {
+		// filtro gli utenti in base alla searchQuery e li ordino se selezionati
 		filteredUsers() {
 			return this.users
 				.filter((u) => u.userId !== this.userId)
@@ -99,6 +105,7 @@ export default {
 				});
 		},
 
+		// Abilita/Disabilita il bottone di creazione del gruppo
 		canCreate() {
 			return (
 				this.groupName.trim() &&
@@ -109,6 +116,7 @@ export default {
 		},
 	},
 
+	// Alla creazione, esegue il fetch degli utenti
 	async created() {
 		try {
 			const res = await this.$axios.get("/users", {
@@ -122,10 +130,12 @@ export default {
 	},
 
 	methods: {
+		// Verifica se un utente sia selezionato o meno
 		isSelected(user) {
 			return this.selectedUsers.some((u) => u.userId === user.userId);
 		},
 
+		// selettore degli utenti
 		toggleUser(user) {
 			if (this.isSelected(user)) {
 				this.selectedUsers = this.selectedUsers.filter(
@@ -136,6 +146,7 @@ export default {
 			}
 		},
 
+		// photo handler
 		handlePhotoUpload(event) {
 			const file = event.target.files[0];
 			if (file) {
@@ -147,10 +158,12 @@ export default {
 			}
 		},
 
+		// Rimuove la foto selezionata
 		removeGroupPhoto() {
 			this.groupPhoto = null;
 		},
 
+		// Crea il gruppo, specificando nome, foto e membri
 		async createGroup() {
 			try {
 				const res = await this.$axios.post(
@@ -180,6 +193,7 @@ export default {
 			}
 		},
 
+		// Gestore degli errori
 		handleError(err) {
 			if (!err.response) {
 				this.$root.showToast(

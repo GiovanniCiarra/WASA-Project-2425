@@ -1,6 +1,7 @@
 <template>
 	<transition name="slide" @after-leave="$emit('closeOverlay')">
 		<div class="info-overlay" v-if="visible">
+			<!-- Icona di chiusura overlay -->
 			<img
 				@click="visible = false"
 				class="close-btn"

@@ -1,9 +1,11 @@
 <template>
+	<!-- conversation Item -->
 	<div
 		class="conversation-item"
 		:class="{ selected: isSelected }"
 		@click="$emit('conversationSelected', conversation.conversationId)"
 	>
+		<!-- Conversation Photo -->
 		<img
 			:src="
 				conversation.photo ||
@@ -15,9 +17,13 @@
 			class="conversation-photo"
 		/>
 		<div class="conversation-info">
+			<!-- Conversation Name -->
 			<div class="conversation-name">{{ conversation.name }}</div>
+
+			<!-- Conversation Snippet -->
 			<div class="conversation-snippet">
 				<template v-if="conversation.lastMessage">
+					<!-- Se lastMessage è una foto, icona e label dedicate -->
 					<template v-if="conversation.lastMessage.type === 'photo'">
 						<span class="snippet-with-icon">
 							<img
@@ -28,7 +34,9 @@
 							<span>Image</span>
 						</span>
 					</template>
+
 					<template v-else>
+						<!-- Altrimenti se un gruppo, sender + message -->
 						<template v-if="conversation.type === 'group'">
 							<strong
 								>{{ conversation.lastMessage.senderUsername }}:
@@ -37,11 +45,15 @@
 								{{ conversation.lastMessage.content }}
 							</span>
 						</template>
+
+						<!-- Altrimenti solo message -->
 						<template v-else>
 							{{ conversation.lastMessage.content }}
 						</template>
 					</template>
 				</template>
+
+				<!-- Label se non c'è lastMessage -->
 				<template v-else> Nessun messaggio </template>
 			</div>
 		</div>

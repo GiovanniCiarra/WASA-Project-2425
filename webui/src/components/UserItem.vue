@@ -50,8 +50,6 @@ export default {
 	cursor: pointer;
 	transition: background-color 0.2s ease;
 	gap: 10px;
-
-	/* reset stile pulsante */
 	font: inherit;
 	color: inherit;
 	appearance: none;

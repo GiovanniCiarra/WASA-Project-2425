@@ -1,7 +1,9 @@
 <template>
 	<transition name="slide" @after-leave="$emit('closeOverlay')">
 		<div class="info-overlay" v-if="visible">
+			<!-- Sezione suoperiore -->
 			<div class="top-bar">
+				<!-- Icona chiusura overlay -->
 				<img
 					@click="visible = false"
 					class="close-btn"
@@ -46,8 +48,10 @@
 					</div>
 				</div>
 
+				<!-- Sezione inferiore -->
 				<div class="participants-header">Partecipanti:</div>
 
+				<!-- Lista dei memebri -->
 				<div class="member-list-scrollable">
 					<MemberItem
 						v-for="member in sortedMembers"
@@ -58,6 +62,7 @@
 					/>
 				</div>
 
+				<!-- AddMember Button -->
 				<div class="add-member-container">
 					<button class="add-member-btn" @click="showAddPopup = true">
 						<img src="../assets/icons/più.png" alt="Add" />
@@ -88,10 +93,10 @@ export default {
 	},
 
 	props: {
-		groupName: String,
-		groupPhoto: String,
-		members: Array,
-		currentUser: Number,
+		groupName: String, // nome corrente del gruppo (salvato nel db)
+		groupPhoto: String, // foto corrente del gruppo (salvata nel db)
+		members: Array, // Membri del gruppo
+		currentUser: Number, // userId dell'utente corrente
 	},
 	emits: [
 		"closeOverlay",
@@ -105,14 +110,15 @@ export default {
 		return {
 			visible: true,
 			defaultGroupPhoto,
-			newGroupName: "",
-			newGroupPhoto: null,
-			showAddPopup: false,
-			availableUsers: [],
+			newGroupName: "", // Nuovo nome del gruppo temporaneo (ancora non salvato nel db)
+			newGroupPhoto: null, // Nuova foto del gruppo temporaneo (ancora non salvata nel db)
+			showAddPopup: false, // Booleano per mostrare il popup di add
+			availableUsers: [], // Utenti che possono essere aggiunti al gruppo
 		};
 	},
 
 	computed: {
+		// Abilita/Disabilita il bottone per salvare il nuovo nome
 		canSave() {
 			return (
 				this.newGroupName.trim() &&
@@ -138,6 +144,7 @@ export default {
 	},
 
 	watch: {
+		// Se i membri cambiano, rieseguo il fetch
 		members: {
 			immediate: true,
 			handler(newVal, oldVal) {
@@ -149,8 +156,8 @@ export default {
 	},
 
 	methods: {
+		// Fetch degli utenti
 		async fetchAvailableUsers() {
-			// Faccio il fetch degli utenti
 			try {
 				const res = await this.$axios.get("/users", {
 					headers: {
@@ -169,15 +176,18 @@ export default {
 			}
 		},
 
+		// Aggiunge i membri selezionati al gruppo (emette l'evento)
 		handleAddMembers(newUsers) {
 			this.$emit("addMembers", newUsers);
 			this.showAddPopup = false;
 		},
 
+		// Rimuove l'utente corrente dal gruppo (emette l'evento)
 		leaveGroup() {
 			this.$emit("leaveGroup");
 		},
 
+		// Salva il nuovo nome del gruppo (genera l'evento)
 		saveGroupName() {
 			if (this.newGroupName.trim() !== "") {
 				this.$emit("updateGroupName", this.newGroupName.trim());
@@ -201,6 +211,7 @@ export default {
 			}
 		},
 
+		// Gestore degli errori
 		handleError(err) {
 			if (!err.response) {
 				this.$root.showToast(

@@ -3,17 +3,22 @@
 		class="member-item"
 		:class="{ 'current-user': member.userId === currentUser }"
 	>
+		<!-- member photo -->
 		<img
 			:src="member.photo || defaultUserPhoto"
 			alt="Foto Membro"
 			class="member-photo"
 		/>
+
+		<!-- member name -->
 		<span class="member-username"
 			>{{ member.username }}
 			<span v-if="member.userId === currentUser" class="you-label"
 				>(tu)</span
 			>
 		</span>
+
+		<!--leave button-->
 		<button
 			v-if="member.userId === currentUser"
 			class="leave-btn"
@@ -79,9 +84,9 @@ export default {
 
 .leave-btn {
 	padding: 6px 12px;
-	background-color: rgb(255, 228, 228); /* Sfondo bianco */
-	color: #ff5b42; /* Testo arancione */
-	border: 2px solid #ff5b42; /* Bordo arancione */
+	background-color: rgb(255, 228, 228);
+	color: #ff5b42;
+	border: 2px solid #ff5b42;
 	border-radius: 6px;
 	cursor: pointer;
 	font-size: 0.9rem;
@@ -89,7 +94,7 @@ export default {
 }
 
 .leave-btn:hover {
-	background-color: #ff5b42; /* Sfondo si colora */
-	color: white; /* Testo diventa bianco */
+	background-color: #ff5b42;
+	color: white;
 }
 </style>

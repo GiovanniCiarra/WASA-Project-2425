@@ -1,11 +1,13 @@
 <template>
 	<div class="conversation-list">
+		<!-- search bar -->
 		<input
 			v-model="search"
 			placeholder="Cerca conversazioni..."
 			class="search-input"
 		/>
 
+		<!-- Conversations list -->
 		<div v-if="filteredConversations.length > 0">
 			<ConversationItem
 				v-for="conv in filteredConversations"
@@ -17,6 +19,7 @@
 			/>
 		</div>
 
+		<!-- Se non ci sono conversazioni, label e bottone dedicati -->
 		<div v-else class="no-conversations">
 			Nessuna conversazione trovata.
 			<button @click="$emit('newConversation')">

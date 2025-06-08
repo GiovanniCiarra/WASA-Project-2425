@@ -1,5 +1,7 @@
 <template>
+	<!-- conversation Header -->
 	<div class="header-container" @click="$emit('openInfo')">
+		<!-- Conversation Image -->
 		<img
 			:src="
 				photo ||
@@ -9,8 +11,11 @@
 			class="header-photo"
 		/>
 
+		<!-- Conversation Name -->
 		<div class="header-text">
 			<span class="header-name">{{ name }}</span>
+
+			<!-- Conversation Members -->
 			<span v-if="type === 'group'" class="header-members">
 				{{ truncatedMemberList }}
 			</span>
@@ -24,10 +29,10 @@ import defaultUserPhoto from "../assets/images/default-user-48.png";
 
 export default {
 	props: {
-		name: String,
-		photo: String,
-		type: String,
-		members: Array,
+		name: String, // nome della conversazione
+		photo: String, // foto della conversazione
+		type: String, // tipo della conversazione
+		members: Array, // membri della conversazione
 	},
 
 	emits: ["openInfo"],
@@ -40,6 +45,7 @@ export default {
 	},
 
 	computed: {
+		// Prende i membri del gruppo (se eccessivi aggiuinge i puntini)
 		truncatedMemberList() {
 			const usernames = this.members.map((m) => m.username);
 			const result = usernames.join(", ");
@@ -85,6 +91,6 @@ export default {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	max-width: 900px; /* regola a seconda dello spazio disponibile */
+	max-width: 900px;
 }
 </style>

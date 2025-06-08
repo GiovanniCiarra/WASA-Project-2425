@@ -239,12 +239,13 @@ export default {
 	},
 
 	computed: {
+		// Ritorna un booleano che identifica se il messaggio è dell'utente corrente o meno
 		isMine() {
 			return this.message.senderId === this.currentUser;
 		},
 
 		formattedTimestamp() {
-			// Mostra solo ora e minuti per semplicità
+			// Mostro solo ora e minuti
 			const date = new Date(this.message.timestamp);
 			return date.toLocaleString("it-IT", {
 				weekday: "short",
@@ -255,18 +256,23 @@ export default {
 			});
 		},
 
+		// Taglia i commenti in modo da mostrarne solo 4
 		displayedComments() {
 			return this.message.comments.slice(0, 3);
 		},
 	},
 
 	mounted() {
+		// Ogni volta che ci sarà un click, verrà richiamata la funzione closeActionMenu
 		document.addEventListener("click", this.closeActionsMenu);
 	},
+
 	beforeUnmount() {
+		// Elimino il Listener
 		document.removeEventListener("click", this.closeActionsMenu);
 	},
 	methods: {
+		// Se il click di EventListener non si trova all'interno di ActionGrid e dal bottone, allora chiude la griglia
 		closeActionsMenu(event) {
 			const actionsGrid = this.$el.querySelector(".message-actions-grid");
 			const actionsButton = this.$el.querySelector(
@@ -551,7 +557,7 @@ export default {
 .snippet-with-icon {
 	display: inline-flex;
 	align-items: center;
-	gap: 4px; /* spazio tra icona e testo */
+	gap: 4px;
 }
 
 .snippet-icon {

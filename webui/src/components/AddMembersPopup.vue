@@ -1,6 +1,7 @@
 <template>
 	<div class="popup-overlay">
 		<div class="popup-content">
+			<!-- Icona di chiusura popup -->
 			<img
 				src="../assets/icons/close-big.png"
 				alt="Chiudi"
@@ -10,6 +11,7 @@
 
 			<h2 class="popup-title">Aggiungi Partecipanti</h2>
 
+			<!-- Lista degli utenti da poter aggiungere al gruppo -->
 			<div class="user-list">
 				<div
 					v-for="user in users"
@@ -26,11 +28,13 @@
 					<span class="username">{{ user.username }}</span>
 				</div>
 
+				<!-- Label in caso di assenza di utenti -->
 				<div v-if="users.length === 0" class="no-users-msg">
 					Nessun utente disponibile da aggiungere
 				</div>
 			</div>
 
+			<!-- Confirm button -->
 			<button
 				class="confirm-btn"
 				@click="confirmSelection"
@@ -55,21 +59,24 @@ export default {
 	data() {
 		return {
 			defaultUserPhoto,
-			selectedUsers: [],
+			selectedUsers: [], // Utenti selezionati da aggiungere
 		};
 	},
 
 	computed: {
+		// Abilita/disabilita il bottone di aggiunta al gruppo
 		canConfirm() {
 			return this.selectedUsers.length > 0;
 		},
 	},
 
 	methods: {
+		// Verifica se un utente sia selezionato o meno
 		isSelected(user) {
 			return this.selectedUsers.some((u) => u.userId === user.userId);
 		},
 
+		// Slettore degli utenti
 		toggleSelection(user) {
 			if (this.selectedUsers.some((u) => u.userId === user.userId)) {
 				this.selectedUsers = this.selectedUsers.filter(
@@ -80,6 +87,7 @@ export default {
 			}
 		},
 
+		// Conferma l'aggiunta
 		confirmSelection() {
 			this.$emit("confirm", this.selectedUsers);
 		},

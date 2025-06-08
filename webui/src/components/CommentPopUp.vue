@@ -2,7 +2,10 @@
 	<div class="comment-details-overlay">
 		<div class="comment-details">
 			<div class="comment-details-header">
+				<!-- popup title -->
 				<span class="title">Commenti al messaggio</span>
+
+				<!-- icona chiusura popup -->
 				<img
 					@click="$emit('close')"
 					class="close-btn"
@@ -11,10 +14,12 @@
 				/>
 			</div>
 
+			<!-- label in caso di mancanza di commenti -->
 			<div v-if="comments.length === 0" class="empty">
 				Nessun commento
 			</div>
 			<ul v-else>
+				<!-- Lista di commenti -->
 				<li v-for="comment in comments" :key="comment.commentId">
 					<span class="emoji">{{ comment.content }}</span>
 					<div class="user-info">
@@ -25,6 +30,8 @@
 							>(tu)</span
 						>
 					</div>
+
+					<!-- Delete button -->
 					<button
 						v-if="Number(comment.senderId) === currentUser"
 						class="delete-btn"
@@ -41,8 +48,8 @@
 <script>
 export default {
 	props: {
-		comments: Array,
-		currentUser: Number,
+		comments: Array, // Array dei commenti al messaggio
+		currentUser: Number, // userId dell'utente corrente
 	},
 };
 </script>
