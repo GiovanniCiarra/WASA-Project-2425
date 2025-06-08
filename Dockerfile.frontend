@@ -1,5 +1,5 @@
 # UselatestNodeLTS tobuild
-FROM node:lts AS builder
+FROM node:21-alpine3.19 AS builder
 
 # Copy Vue.jscode
 WORKDIR /app
