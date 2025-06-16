@@ -1,15 +1,15 @@
-# UselatestNodeLTS to build
+# Use latest NodeLTS to build
 FROM node:lts AS builder
 
 # Copy Vue.jscode
 WORKDIR /app
 COPY webui/yarn.lock webui/package.json ./
+RUN corepack enable
 RUN yarn install
 
 ### BuildVue.js into plainHTML/CSS/JS
 COPY webui/ .
 RUN yarn run build-prod
-
 
 ### Create finalcontainer
 FROM nginx:stable
